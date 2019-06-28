@@ -1,0 +1,7 @@
+[package]
+name = "arq-simul"
+version = "0.1.0"
+authors = ["Miguel Rodríguez Pérez <miguel@det.uvigo.gal>"]
+edition = "2018"
+
+[dependencies]
