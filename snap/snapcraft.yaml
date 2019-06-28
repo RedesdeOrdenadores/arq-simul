@@ -1,0 +1,22 @@
+name: arq-simul
+version: 0.1.0
+summary: A didactic simulator for different ARQ algorithms
+
+description: |
+  This is a simple discrete time event simulator that shows the
+  behavior of the main ARQ algorithms. It is built with didactic objectives to
+  be uses in introductory Computer Networks subjects.
+
+confinement: strict
+base: core18
+license: GPL-3.0
+grade: stable
+
+parts:
+  arq-simul:
+    plugin: rust
+    source: .
+
+apps:
+  arq-simul:
+    command: bin/arq-simul
