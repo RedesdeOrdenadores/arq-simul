@@ -5,3 +5,10 @@ authors = ["Miguel Rodríguez Pérez <miguel@det.uvigo.gal>"]
 edition = "2018"
 
 [dependencies]
+structopt = "0.2"
+stderrlog = "0.4"
+log = "0.4"
+rand =  "0.7"
+
+[dependencies.eee-hyst]
+git = "https://github.com/migrax/HystEEE.git"
