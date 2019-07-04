@@ -51,7 +51,7 @@ impl Node {
             payload_size,
             tx_window: u64::from(tx_window),
             last_acked: 0,
-            last_sent: 1,
+            last_sent: u64::from(tx_window), // A trick to not have to modify the node at start
             last_recv: 0,
         }
     }
@@ -80,12 +80,14 @@ impl AttachedNode {
         }
     }
 
-    pub fn start(&self, net: &Network, dst_addr: Address, now: Time) -> Vec<Event> {
-        if let ElementClass::Link(link) = net.get_ref_by_addr(self.link_addr).class {
-            self.transmit(self.last_sent, dst_addr, now, self.payload_size, &link)
-        } else {
-            panic!("There was no link attached in the network");
+    pub fn start(&self, net: &mut Network, dst_addr: Address, now: Time) -> Vec<Event> {
+        let link = get_mut_link_by_addr(net, self.link_addr);
+
+        let mut res = Vec::new();
+        for seqno in 1..self.last_sent + 1 {
+            res.extend(self.transmit(seqno, dst_addr, now, self.payload_size, link))
         }
+        res
     }
 
     fn transmit(
@@ -94,7 +96,7 @@ impl AttachedNode {
         dst_addr: Address,
         now: Time,
         payload_size: u16,
-        link: &AttachedLink,
+        link: &mut AttachedLink,
     ) -> Vec<Event> {
         let mut res = Vec::with_capacity(2);
 
@@ -106,9 +108,11 @@ impl AttachedNode {
             dst_addr,
         };
 
+        let delivery_time = link.advance_delivery_time(self.addr, &p, now);
+
         if payload_size > 0 {
             res.push(Event {
-                due_time: link.get_delivery_time(self.addr, now) + link.calc_timeout(&p),
+                due_time: delivery_time + link.calc_timeout(&p),
                 target: self.addr,
                 kind: EventKind::Timeout(seqno),
             });
@@ -116,7 +120,7 @@ impl AttachedNode {
 
         info!("{} sending {}", now.as_secs(), p);
         res.push(Event {
-            due_time: link.get_delivery_time(self.addr, now),
+            due_time: delivery_time,
             target: self.link_addr,
             kind: EventKind::Packet(p),
         });
@@ -124,24 +128,24 @@ impl AttachedNode {
         res
     }
 
-    fn process_timeout(&self, dst_addr: Address, now: Time, link: &AttachedLink) -> Vec<Event> {
-        debug!("Processing timeout");
+    fn process_timeout(&self, dst_addr: Address, now: Time, link: &mut AttachedLink) -> Vec<Event> {
         self.transmit(self.last_sent, dst_addr, now, self.payload_size, link)
     }
 
-    fn process_ack(&mut self, packet: &Packet, now: Time, link: &AttachedLink) -> Vec<Event> {
+    fn process_ack(&mut self, packet: &Packet, now: Time, link: &mut AttachedLink) -> Vec<Event> {
+        info!("{} ACK received {}", now.as_secs(), packet);
         self.last_acked = packet.seqno;
-        self.last_sent += 1;
-        self.transmit(
-            self.last_sent,
-            packet.src_addr,
-            now,
-            self.payload_size,
-            link,
-        )
+
+        let mut res = Vec::new();
+        for seqno in self.last_sent + 1..self.last_acked + self.tx_window + 1 {
+            res.extend(self.transmit(seqno, packet.src_addr, now, self.payload_size, link));
+        }
+        self.last_sent = self.last_sent + self.last_acked + self.tx_window;
+
+        res
     }
 
-    fn process_data(&mut self, packet: &Packet, now: Time, link: &AttachedLink) -> Vec<Event> {
+    fn process_data(&mut self, packet: &Packet, now: Time, link: &mut AttachedLink) -> Vec<Event> {
         info!("{} DATA received {}", now.as_secs(), packet);
         if packet.seqno == self.last_recv + 1 {
             self.last_recv = packet.seqno;
@@ -156,34 +160,36 @@ impl AttachedNode {
         }
     }
 
-    pub fn process(&mut self, event: &Event, now: Time, net: &Network) -> Vec<Event> {
+    pub fn process(&mut self, event: &Event, now: Time, net: &mut Network) -> Vec<Event> {
         match event.kind {
             EventKind::Packet(payload) => {
                 if payload.payload_size == 0 {
                     // An ack
-                    if payload.seqno == self.last_sent {
-                        self.process_ack(&payload, now, &get_link_by_addr(net, self.link_addr))
+                    if payload.seqno > self.last_acked && payload.seqno <= self.last_sent {
+                        self.process_ack(&payload, now, get_mut_link_by_addr(net, self.link_addr))
                     } else {
                         debug!(
-                            "Ignoring incorrect ack {}, expecting{}",
-                            payload.seqno, self.last_sent
+                            "Ignoring incorrect ack {}, expecting from ({}, {}]",
+                            payload.seqno, self.last_acked, self.last_sent
                         );
                         vec![]
                     }
                 } else {
-                    self.process_data(&payload, now, &get_link_by_addr(net, self.link_addr))
+                    self.process_data(&payload, now, get_mut_link_by_addr(net, self.link_addr))
                 }
             }
             EventKind::Timeout(seqno) => {
                 if seqno > self.last_acked {
+                    debug!("Processing timeout {}", seqno);
                     self.process_timeout(
                         self.get_dst_address(net),
                         now,
-                        &get_link_by_addr(net, self.link_addr),
+                        get_mut_link_by_addr(net, self.link_addr),
                     )
                 } else {
                     trace!(
-                        "Ignorint timeout for {}, minimum is {}",
+                        "{} Ignoring timeout for {}, minimum is {}",
+                        now.as_secs(),
                         seqno,
                         self.last_acked + 1
                     );
@@ -194,9 +200,18 @@ impl AttachedNode {
     }
 }
 
-fn get_link_by_addr(net: &Network, link_addr: Address) -> AttachedLink {
+fn get_link_by_addr(net: &Network, link_addr: Address) -> &AttachedLink {
     let element = net.get_ref_by_addr(link_addr);
-    if let ElementClass::Link(link) = element.class {
+    if let ElementClass::Link(ref link) = element.class {
+        return link;
+    }
+
+    panic!("Could not find a link at address: {}", link_addr);
+}
+
+fn get_mut_link_by_addr(net: &mut Network, link_addr: Address) -> &mut AttachedLink {
+    let element = net.get_mut_by_addr(link_addr);
+    if let ElementClass::Link(ref mut link) = element.class {
         return link;
     }
 

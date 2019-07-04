@@ -78,15 +78,6 @@ impl AttachedLink {
         let mut res = Vec::with_capacity(1);
 
         if let EventKind::Packet(payload) = event.kind {
-            let tx_length = self.tx(&payload);
-            let tx_time = if payload.src_addr == self.src_addr {
-                &mut self.last_tx_from_src
-            } else if payload.src_addr == self.dst_addr {
-                &mut self.last_tx_from_dst
-            } else {
-                panic!("Not a valid node address");
-            };
-
             self.counter = self.counter.received_packet(&payload);
 
             if self.drop_distribution.sample(&mut rand::thread_rng()) {
@@ -94,13 +85,11 @@ impl AttachedLink {
             } else {
                 self.counter = self.counter.delivered_packet(&payload);
                 res.push(Event {
-                    due_time: max(now, *tx_time) + self.propagation_delay + tx_length,
+                    due_time: now + self.propagation_delay,
                     target: payload.dst_addr,
                     kind: EventKind::Packet(payload),
                 })
             };
-
-            *tx_time = max(now, *tx_time) + tx_length;
         } else {
             panic!("Link event with no attached packet to transmit");
         }
@@ -113,26 +102,27 @@ impl AttachedLink {
     }
 
     pub fn calc_timeout(&self, packet: &Packet) -> Time {
-        self.tx(&packet)
-            + self.tx(&Packet {
-                payload_size: 0,
-                ..*packet
-            })
-            + self.propagation_delay
+        self.tx(&Packet {
+            payload_size: 0,
+            ..*packet
+        }) + self.propagation_delay
             + self.propagation_delay
     }
 
-    pub fn get_delivery_time(&self, src_addr: Address, now: Time) -> Time {
-        max(
-            now,
-            if src_addr == self.src_addr {
-                self.last_tx_from_src
-            } else if src_addr == self.dst_addr {
-                self.last_tx_from_dst
-            } else {
-                panic!("Not a valid node address");
-            },
-        )
+    pub fn advance_delivery_time(&mut self, src_addr: Address, packet: &Packet, now: Time) -> Time {
+        let tx_time = self.tx(packet);
+
+        let time = if src_addr == self.src_addr {
+            &mut self.last_tx_from_src
+        } else if src_addr == self.dst_addr {
+            &mut self.last_tx_from_dst
+        } else {
+            panic!("Not a valid node address");
+        };
+
+        let res = max(now, *time) + tx_time;
+        *time = res;
+        res
     }
 
     pub fn show_stats(&self) {

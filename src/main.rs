@@ -106,7 +106,7 @@ fn main() {
     let mut simulator = Simulator::new();
     let mut clock = Time(0);
     if let ElementClass::Node(node) = network.get_mut_by_addr(src_addr).class {
-        simulator.add_events(&node.start(&network, dst_addr, clock));
+        simulator.add_events(&node.start(&mut network, dst_addr, clock));
     };
     while clock < duration {
         match simulator.pop() {
