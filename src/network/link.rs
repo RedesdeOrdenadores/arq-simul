@@ -15,13 +15,15 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
+mod datacounter;
+
 use super::address::Address;
 use super::{Event, EventKind, Network};
 use crate::network::packet::Packet;
+use datacounter::DataCounter;
+use log::{info, trace};
 use rand;
 use rand::distributions::{Bernoulli, Distribution};
-
-use log::trace;
 
 use eee_hyst::Time;
 use std::cmp::max;
@@ -43,6 +45,8 @@ pub struct AttachedLink {
 
     last_tx_from_src: Time,
     last_tx_from_dst: Time,
+
+    counter: DataCounter,
 }
 
 impl Link {
@@ -63,6 +67,8 @@ impl Link {
             drop_distribution: self.drop_distribution,
             last_tx_from_src: Time(0),
             last_tx_from_dst: Time(0),
+
+            counter: DataCounter::default(),
         }
     }
 }
@@ -81,9 +87,12 @@ impl AttachedLink {
                 panic!("Not a valid node address");
             };
 
+            self.counter = self.counter.received_packet(&payload);
+
             if self.drop_distribution.sample(&mut rand::thread_rng()) {
                 trace!("Packet got lost, sorry");
             } else {
+                self.counter = self.counter.delivered_packet(&payload);
                 res.push(Event {
                     due_time: max(now, *tx_time) + self.propagation_delay + tx_length,
                     target: payload.dst_addr,
@@ -124,5 +133,16 @@ impl AttachedLink {
                 panic!("Not a valid node address");
             },
         )
+    }
+
+    pub fn show_stats(&self) {
+        info!(
+            "Received {} bytes ({} of data)",
+            self.counter.raw_received, self.counter.good_received
+        );
+        info!(
+            "Delivered {} bytes ({} of data)",
+            self.counter.raw_delivered, self.counter.good_delivered
+        );
     }
 }

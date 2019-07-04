@@ -93,7 +93,7 @@ fn main() {
     };
 
     let mut network = Network::new();
-    let (src_addr, dst_addr, _link_addr) = network.add_link_and_nodes(
+    let (src_addr, dst_addr, link_addr) = network.add_link_and_nodes(
         Node::create(opt.header_length, opt.payload_length),
         Node::create(opt.header_length, 0),
         Link::create(opt.capacity, delay, drop_distribution),
@@ -116,5 +116,9 @@ fn main() {
                 break;
             }
         }
+    }
+
+    if let ElementClass::Link(l) = network.get_ref_by_addr(link_addr).class {
+        l.show_stats();
     }
 }
