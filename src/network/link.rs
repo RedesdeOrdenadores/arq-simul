@@ -106,11 +106,8 @@ impl AttachedLink {
     pub fn calc_timeout(&self, packet: &Packet) -> Time {
         self.tx(&packet)
             + self.tx(&Packet {
-                seqno: packet.seqno,
-                header_size: packet.header_size,
                 payload_size: 0,
-                src_addr: packet.src_addr,
-                dst_addr: packet.dst_addr,
+                ..*packet
             })
             + self.propagation_delay
             + self.propagation_delay

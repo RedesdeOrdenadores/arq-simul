@@ -20,7 +20,7 @@ use super::link::AttachedLink;
 use super::packet::Packet;
 use super::{ElementClass, Event, EventKind, Network};
 use eee_hyst::Time;
-use log::{debug, info, trace, warn};
+use log::{debug, info, trace};
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq, Default)]
 pub struct Node {
