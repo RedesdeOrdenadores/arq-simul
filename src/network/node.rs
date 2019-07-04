@@ -26,6 +26,7 @@ use log::{debug, info, trace};
 pub struct Node {
     header_size: u16,
     payload_size: u16,
+    tx_window: u64,
     last_acked: u64,
     last_sent: u64,
     last_recv: u64,
@@ -36,6 +37,7 @@ pub struct AttachedNode {
     addr: Address,
     header_size: u16,
     payload_size: u16,
+    tx_window: u64,
     pub link_addr: Address,
     last_acked: u64,
     last_sent: u64,
@@ -43,10 +45,11 @@ pub struct AttachedNode {
 }
 
 impl Node {
-    pub fn create(header_size: u16, payload_size: u16) -> Node {
+    pub fn create(header_size: u16, payload_size: u16, tx_window: u16) -> Node {
         Node {
             header_size,
             payload_size,
+            tx_window: u64::from(tx_window),
             last_acked: 0,
             last_sent: 1,
             last_recv: 0,
@@ -56,9 +59,10 @@ impl Node {
     pub fn attach_to_link(&self, self_addr: Address, link_addr: Address) -> AttachedNode {
         AttachedNode {
             addr: self_addr,
+            link_addr,
             header_size: self.header_size,
             payload_size: self.payload_size,
-            link_addr,
+            tx_window: self.tx_window,
             last_acked: self.last_acked,
             last_sent: self.last_sent,
             last_recv: self.last_recv,

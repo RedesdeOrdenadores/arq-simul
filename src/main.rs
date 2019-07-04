@@ -39,6 +39,10 @@ struct Opt {
     #[structopt(long = "payload", default_value = "1460")]
     payload_length: u16,
 
+    /// Window size (in packets)
+    #[structopt(short = "w", long = "wsize", default_value = "1")]
+    tx_window: u16,
+
     /// Packet drop probability
     #[structopt(short = "d", long = "drop", default_value = "0.0")]
     drop: f64,
@@ -94,8 +98,8 @@ fn main() {
 
     let mut network = Network::new();
     let (src_addr, dst_addr, link_addr) = network.add_link_and_nodes(
-        Node::create(opt.header_length, opt.payload_length),
-        Node::create(opt.header_length, 0),
+        Node::create(opt.header_length, opt.payload_length, opt.tx_window),
+        Node::create(opt.header_length, 0, opt.tx_window),
         Link::create(opt.capacity, delay, drop_distribution),
     );
 
