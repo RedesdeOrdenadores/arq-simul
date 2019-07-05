@@ -15,23 +15,28 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-use super::network::address::Address;
-pub use super::network::packet::Packet;
+mod network;
+
 use eee_hyst::Time;
+use network::address::Address;
+use network::packet::Packet;
 use std::cmp::Ordering;
 use std::collections::binary_heap::BinaryHeap;
 
+pub use self::EventKind::{Payload, Timeout};
+pub use network::{ElementClass, Link, Network, Node};
+
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum EventKind {
-    Packet(Packet),
+    Payload(Packet),
     Timeout(u64),
 }
 
 impl EventKind {
     fn weigth(&self) -> usize {
         match self {
-            EventKind::Packet(_) => 0,
-            EventKind::Timeout(_) => 1,
+            Payload(_) => 0,
+            Timeout(_) => 1,
         }
     }
 }

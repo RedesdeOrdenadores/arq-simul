@@ -18,7 +18,8 @@
 use super::address::Address;
 use super::link::AttachedLink;
 use super::packet::Packet;
-use super::{ElementClass, Event, EventKind, Network};
+use super::{ElementClass, Event, Network};
+use crate::simulator::{Payload, Timeout};
 use eee_hyst::Time;
 use log::{debug, info, trace};
 
@@ -114,7 +115,7 @@ impl AttachedNode {
             res.push(Event {
                 due_time: delivery_time + link.calc_timeout(&p),
                 target: self.addr,
-                kind: EventKind::Timeout(seqno),
+                kind: Timeout(seqno),
             });
         }
 
@@ -122,7 +123,7 @@ impl AttachedNode {
         res.push(Event {
             due_time: delivery_time,
             target: self.link_addr,
-            kind: EventKind::Packet(p),
+            kind: Payload(p),
         });
 
         res
@@ -171,23 +172,23 @@ impl AttachedNode {
 
     pub fn process(&mut self, event: &Event, now: Time, net: &mut Network) -> Vec<Event> {
         match event.kind {
-            EventKind::Packet(payload) => {
-                if payload.payload_size == 0 {
+            Payload(packet) => {
+                if packet.payload_size == 0 {
                     // An ack
-                    if payload.seqno > self.last_acked && payload.seqno <= self.last_sent {
-                        self.process_ack(&payload, now, get_mut_link_by_addr(net, self.link_addr))
+                    if packet.seqno > self.last_acked && packet.seqno <= self.last_sent {
+                        self.process_ack(&packet, now, get_mut_link_by_addr(net, self.link_addr))
                     } else {
                         debug!(
                             "Ignoring incorrect ack {}, expecting from ({}, {}]",
-                            payload.seqno, self.last_acked, self.last_sent
+                            packet.seqno, self.last_acked, self.last_sent
                         );
                         vec![]
                     }
                 } else {
-                    self.process_data(&payload, now, get_mut_link_by_addr(net, self.link_addr))
+                    self.process_data(&packet, now, get_mut_link_by_addr(net, self.link_addr))
                 }
             }
-            EventKind::Timeout(seqno) => {
+            Timeout(seqno) => {
                 if seqno > self.last_acked {
                     debug!("Processing timeout {}", seqno);
                     self.process_timeout(

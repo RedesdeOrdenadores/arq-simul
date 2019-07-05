@@ -22,8 +22,8 @@ use eee_hyst::Time;
 use rand::distributions::Bernoulli;
 use structopt::StructOpt;
 
-use arq_simul::network::{ElementClass, Link, Network, Node};
 use arq_simul::simulator::Simulator;
+use arq_simul::simulator::{ElementClass, Link, Network, Node};
 
 #[derive(StructOpt, Debug)]
 struct Opt {

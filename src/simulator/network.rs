@@ -20,7 +20,7 @@ mod link;
 mod node;
 pub mod packet;
 
-use super::simulator::{Event, EventKind};
+use super::Event;
 use address::Address;
 use eee_hyst::Time;
 pub use link::{AttachedLink, Link};
@@ -133,14 +133,14 @@ impl Network {
                 ElementClass::Node(mut n) => (
                     n.process(event, now, self),
                     Element {
-                        addr: addr,
+                        addr,
                         class: ElementClass::Node(n),
                     },
                 ),
                 ElementClass::Link(mut n) => (
                     n.process(event, now, self),
                     Element {
-                        addr: addr,
+                        addr,
                         class: ElementClass::Link(n),
                     },
                 ),

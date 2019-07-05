@@ -18,10 +18,11 @@
 mod datacounter;
 
 use super::address::Address;
-use super::{Event, EventKind, Network};
-use crate::network::packet::Packet;
+use super::packet::Packet;
+use super::{Event, Network};
+use crate::simulator::Payload;
 use datacounter::DataCounter;
-use log::{info, trace};
+use log::trace;
 use rand;
 use rand::distributions::{Bernoulli, Distribution};
 
@@ -77,17 +78,17 @@ impl AttachedLink {
     pub fn process(&mut self, event: &Event, now: Time, _net: &Network) -> Vec<Event> {
         let mut res = Vec::with_capacity(1);
 
-        if let EventKind::Packet(payload) = event.kind {
-            self.counter = self.counter.received_packet(&payload);
+        if let Payload(packet) = event.kind {
+            self.counter = self.counter.received_packet(&packet);
 
             if self.drop_distribution.sample(&mut rand::thread_rng()) {
                 trace!("Packet got lost, sorry");
             } else {
-                self.counter = self.counter.delivered_packet(&payload);
+                self.counter = self.counter.delivered_packet(&packet);
                 res.push(Event {
                     due_time: now + self.propagation_delay,
-                    target: payload.dst_addr,
-                    kind: EventKind::Packet(payload),
+                    target: packet.dst_addr,
+                    kind: Payload(packet),
                 })
             };
         } else {
@@ -120,17 +121,17 @@ impl AttachedLink {
             panic!("Not a valid node address");
         };
 
-        let res = max(now, *time) + tx_time;
-        *time = res;
-        res
+        *time = max(now, *time) + tx_time;
+
+        *time
     }
 
     pub fn show_stats(&self) {
-        info!(
+        println!(
             "Received {} bytes ({} of data)",
             self.counter.raw_received, self.counter.good_received
         );
-        info!(
+        println!(
             "Delivered {} bytes ({} of data)",
             self.counter.raw_delivered, self.counter.good_delivered
         );
