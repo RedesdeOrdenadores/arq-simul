@@ -22,6 +22,7 @@ use super::{ElementClass, Event, Network};
 use crate::simulator::{Payload, Timeout};
 use eee_hyst::Time;
 use log::{debug, info, trace};
+use std::cmp::max;
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq, Default)]
 pub struct Node {
@@ -157,9 +158,11 @@ impl AttachedNode {
 
     fn process_data(&mut self, packet: &Packet, now: Time, link: &mut AttachedLink) -> Vec<Event> {
         info!("{} DATA received {}", now.as_secs(), packet);
-        if packet.seqno == self.last_recv + 1 {
-            self.last_recv = packet.seqno;
-            self.transmit(self.last_recv, packet.src_addr, now, 0, link)
+        if packet.seqno <= self.last_recv + 1 {
+            // New data
+
+            self.last_recv = max(self.last_recv, packet.seqno);
+            self.transmit(packet.seqno, packet.src_addr, now, 0, link)
         } else {
             debug!(
                 "Ignoring unexpected packet {}, expecting {}",
