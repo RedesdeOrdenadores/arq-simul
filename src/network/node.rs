@@ -84,7 +84,7 @@ impl AttachedNode {
         let link = get_mut_link_by_addr(net, self.link_addr);
 
         let mut res = Vec::new();
-        for seqno in 1..self.last_sent + 1 {
+        for seqno in 1..=self.last_sent {
             res.extend(self.transmit(seqno, dst_addr, now, self.payload_size, link))
         }
         res
@@ -128,19 +128,28 @@ impl AttachedNode {
         res
     }
 
-    fn process_timeout(&self, dst_addr: Address, now: Time, link: &mut AttachedLink) -> Vec<Event> {
-        self.transmit(self.last_sent, dst_addr, now, self.payload_size, link)
+    fn process_timeout(
+        &self,
+        dst_addr: Address,
+        seqno: u64,
+        now: Time,
+        link: &mut AttachedLink,
+    ) -> Vec<Event> {
+        self.transmit(seqno, dst_addr, now, self.payload_size, link)
     }
 
     fn process_ack(&mut self, packet: &Packet, now: Time, link: &mut AttachedLink) -> Vec<Event> {
         info!("{} ACK received {}", now.as_secs(), packet);
+
+        debug!("Current window: ({}, {}]", self.last_acked, self.last_sent);
         self.last_acked = packet.seqno;
 
         let mut res = Vec::new();
-        for seqno in self.last_sent + 1..self.last_acked + self.tx_window + 1 {
+        for seqno in self.last_sent + 1..=self.last_acked + self.tx_window {
             res.extend(self.transmit(seqno, packet.src_addr, now, self.payload_size, link));
         }
-        self.last_sent = self.last_sent + self.last_acked + self.tx_window;
+        self.last_sent = self.last_acked + self.tx_window;
+        debug!("Updated window: ({}, {}]", self.last_acked, self.last_sent);
 
         res
     }
@@ -152,7 +161,7 @@ impl AttachedNode {
             self.transmit(self.last_recv, packet.src_addr, now, 0, link)
         } else {
             debug!(
-                "Ignoring duplicate packet {}, expecting {}",
+                "Ignoring unexpected packet {}, expecting {}",
                 packet.seqno,
                 self.last_recv + 1
             );
@@ -183,6 +192,7 @@ impl AttachedNode {
                     debug!("Processing timeout {}", seqno);
                     self.process_timeout(
                         self.get_dst_address(net),
+                        seqno,
                         now,
                         get_mut_link_by_addr(net, self.link_addr),
                     )
