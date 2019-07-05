@@ -19,7 +19,6 @@
 extern crate log;
 
 use eee_hyst::Time;
-use rand::distributions::Bernoulli;
 use structopt::StructOpt;
 
 use arq_simul::simulator::{Link, Network, Node, Simulator};
@@ -42,9 +41,9 @@ struct Opt {
     #[structopt(short = "w", long = "wsize", default_value = "1")]
     tx_window: u16,
 
-    /// Packet drop probability
-    #[structopt(short = "d", long = "drop", default_value = "0.0")]
-    drop: f64,
+    /// Bit error rate
+    #[structopt(short = "b", long = "ber", default_value = "0.0")]
+    ber: f64,
 
     /// Propagation delay, in seconds
     #[structopt(short = "p", long = "prop_delay", default_value = "1e-3")]
@@ -73,13 +72,10 @@ fn main() {
         return;
     }
 
-    let drop_distribution = match Bernoulli::new(opt.drop) {
-        Ok(dist) => dist,
-        Err(_) => {
-            error!("{} is not a valid probability value.", opt.drop);
-            return;
-        }
-    };
+    if opt.ber < 0.0 || opt.ber > 1.0 {
+        error!("BER has to be between 0 and 1");
+        return;
+    }
 
     let delay = if opt.delay >= 0.0 {
         Time::from_secs(opt.delay)
@@ -99,7 +95,7 @@ fn main() {
     let (src_addr, dst_addr, link_addr) = network.add_link_and_nodes(
         Node::create(opt.header_length, opt.payload_length, opt.tx_window),
         Node::create(opt.header_length, 0, opt.tx_window),
-        Link::create(opt.capacity, delay, drop_distribution),
+        Link::create(opt.capacity, delay, opt.ber),
     );
 
     let mut simulator = Simulator::new();

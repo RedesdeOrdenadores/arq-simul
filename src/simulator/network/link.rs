@@ -23,8 +23,7 @@ use super::{Event, Network};
 use crate::simulator::Payload;
 use datacounter::DataCounter;
 use log::trace;
-use rand;
-use rand::distributions::{Bernoulli, Distribution};
+use rand::Rng;
 
 use eee_hyst::Time;
 use std::cmp::max;
@@ -33,7 +32,7 @@ use std::cmp::max;
 pub struct Link {
     capacity: f64,
     propagation_delay: Time,
-    drop_distribution: Bernoulli,
+    bit_error_rate: f64,
 }
 
 #[derive(Clone, Copy, Debug)]
@@ -42,7 +41,7 @@ pub struct AttachedLink {
     pub dst_addr: Address,
     capacity: f64,
     propagation_delay: Time,
-    drop_distribution: Bernoulli,
+    bit_error_rate: f64,
 
     last_tx_from_src: Time,
     last_tx_from_dst: Time,
@@ -51,11 +50,11 @@ pub struct AttachedLink {
 }
 
 impl Link {
-    pub fn create(capacity: f64, propagation_delay: Time, drop_distribution: Bernoulli) -> Link {
+    pub fn create(capacity: f64, propagation_delay: Time, bit_error_rate: f64) -> Link {
         Link {
             capacity,
             propagation_delay,
-            drop_distribution,
+            bit_error_rate,
         }
     }
 
@@ -65,7 +64,7 @@ impl Link {
             dst_addr,
             capacity: self.capacity,
             propagation_delay: self.propagation_delay,
-            drop_distribution: self.drop_distribution,
+            bit_error_rate: self.bit_error_rate,
             last_tx_from_src: Time(0),
             last_tx_from_dst: Time(0),
 
@@ -75,13 +74,20 @@ impl Link {
 }
 
 impl AttachedLink {
+    fn drop_packet(&self, packet: &Packet) -> bool {
+        let bit_size = 8 * i32::from(packet.header_size + packet.payload_size);
+        let prob_tx = (1.0 - self.bit_error_rate).powi(bit_size);
+
+        rand::thread_rng().gen::<f64>() > prob_tx
+    }
+
     pub fn process(&mut self, event: &Event, now: Time, _net: &Network) -> Vec<Event> {
         let mut res = Vec::with_capacity(1);
 
         if let Payload(packet) = event.kind {
             self.counter = self.counter.received_packet(&packet);
 
-            if self.drop_distribution.sample(&mut rand::thread_rng()) {
+            if self.drop_packet(&packet) {
                 trace!("Packet got lost, sorry");
             } else {
                 self.counter = self.counter.delivered_packet(&packet);
