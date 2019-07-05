@@ -48,11 +48,11 @@ struct Opt {
     drop: f64,
 
     /// Propagation delay, in seconds
-    #[structopt(short = "p", long = "prop_delay", default_value = "1")]
+    #[structopt(short = "p", long = "prop_delay", default_value = "1e-3")]
     delay: f64,
 
     /// Simulation duration, in seconds
-    #[structopt(short = "l", long = "duration", default_value = "1")]
+    #[structopt(short = "l", long = "duration", default_value = "0.1")]
     duration: f64,
 
     /// Verbose level
