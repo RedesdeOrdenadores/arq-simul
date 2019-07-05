@@ -3,6 +3,7 @@ ARQ-Simul
 
 [![Build
 Status](https://travis-ci.org/RedesdeOrdenadores/arq-simul.svg?branch=master)](https://travis-ci.org/RedesdeOrdenadores/arq-simul)
+[![arq-simul](https://snapcraft.io/arq-simul/badge.svg)](https://snapcraft.io/arq-simul)
 
 ## Overview
 
