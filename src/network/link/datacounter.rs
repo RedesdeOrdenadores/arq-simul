@@ -36,8 +36,8 @@ impl DataCounter {
 
     pub fn delivered_packet(&self, packet: &Packet) -> DataCounter {
         DataCounter {
-            raw_delivered: self.raw_received + raw(packet),
-            good_delivered: self.good_received + good(packet),
+            raw_delivered: self.raw_delivered + raw(packet),
+            good_delivered: self.good_delivered + good(packet),
             ..*self
         }
     }
