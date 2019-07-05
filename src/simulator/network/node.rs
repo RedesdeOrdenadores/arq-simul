@@ -209,6 +209,10 @@ impl AttachedNode {
             }
         }
     }
+
+    pub fn get_transmitted_packets(&self) -> u64 {
+        self.last_acked
+    }
 }
 
 fn get_link_by_addr(net: &Network, link_addr: Address) -> &AttachedLink {

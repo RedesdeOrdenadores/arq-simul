@@ -22,8 +22,7 @@ use eee_hyst::Time;
 use rand::distributions::Bernoulli;
 use structopt::StructOpt;
 
-use arq_simul::simulator::Simulator;
-use arq_simul::simulator::{ElementClass, Link, Network, Node};
+use arq_simul::simulator::{Link, Network, Node, Simulator};
 
 #[derive(StructOpt, Debug)]
 struct Opt {
@@ -105,9 +104,10 @@ fn main() {
 
     let mut simulator = Simulator::new();
     let mut clock = Time(0);
-    if let ElementClass::Node(node) = network.get_mut_by_addr(src_addr).class {
-        simulator.add_events(&node.start(&mut network, dst_addr, clock));
-    };
+
+    let src_node = *network.get_ref_node_by_addr(src_addr);
+    simulator.add_events(&src_node.start(&mut network, dst_addr, clock));
+
     while clock < duration {
         match simulator.pop() {
             Some(event) => {
@@ -122,7 +122,22 @@ fn main() {
         }
     }
 
-    if let ElementClass::Link(l) = network.get_ref_by_addr(link_addr).class {
-        l.show_stats();
-    }
+    let link = network.get_ref_link_by_addr(link_addr);
+
+    link.show_stats();
+    let acked_packets = network
+        .get_ref_node_by_addr(src_addr)
+        .get_transmitted_packets();
+    println!(
+        "Acknowledged {} bytes ({} of data)",
+        acked_packets * u64::from(opt.header_length + opt.payload_length),
+        acked_packets * u64::from(opt.payload_length)
+    );
+    println!(
+        "Efficiency: {}% ({}% considering headers)",
+        100.0 * 8.0 * (acked_packets * u64::from(opt.header_length + opt.payload_length)) as f64
+            / (opt.capacity * duration.as_secs()),
+        100.0 * 8.0 * (acked_packets * u64::from(opt.payload_length)) as f64
+            / (opt.capacity * duration.as_secs())
+    );
 }

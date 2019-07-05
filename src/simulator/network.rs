@@ -109,15 +109,29 @@ impl Network {
         (addr_orig, addr_dst, link_addr)
     }
 
-    pub fn get_ref_by_addr(&self, addr: Address) -> &Element {
+    fn get_ref_by_addr(&self, addr: Address) -> &Element {
         if let Some(element) = self.elements.get(usize::from(addr)) {
             return element;
         };
 
-        panic!("No node at address {}", addr);
+        panic!("No element at address {}", addr);
     }
 
-    pub fn get_mut_by_addr(&mut self, addr: Address) -> &mut Element {
+    pub fn get_ref_node_by_addr(&self, addr: Address) -> &AttachedNode {
+        match self.get_ref_by_addr(addr).class {
+            ElementClass::Node(ref node) => node,
+            _ => panic!("Could not find node at address {}", addr),
+        }
+    }
+
+    pub fn get_ref_link_by_addr(&self, addr: Address) -> &AttachedLink {
+        match self.get_ref_by_addr(addr).class {
+            ElementClass::Link(ref link) => link,
+            _ => panic!("Could not find link at address {}", addr),
+        }
+    }
+
+    fn get_mut_by_addr(&mut self, addr: Address) -> &mut Element {
         if let Some(element) = self.elements.get_mut(usize::from(addr)) {
             return element;
         };
