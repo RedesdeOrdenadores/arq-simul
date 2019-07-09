@@ -19,14 +19,13 @@ mod datacounter;
 
 use super::address::Address;
 use super::packet::Packet;
-use super::{Event, Network};
+use super::Event;
 use crate::simulator::Payload;
 use datacounter::DataCounter;
 use log::trace;
 use rand::Rng;
 
 use eee_hyst::Time;
-use std::cmp::max;
 
 #[derive(Clone, Copy, Debug)]
 pub struct Link {
@@ -42,9 +41,6 @@ pub struct AttachedLink {
     capacity: f64,
     propagation_delay: Time,
     bit_error_rate: f64,
-
-    last_tx_from_src: Time,
-    last_tx_from_dst: Time,
 
     counter: DataCounter,
 }
@@ -65,8 +61,6 @@ impl Link {
             capacity: self.capacity,
             propagation_delay: self.propagation_delay,
             bit_error_rate: self.bit_error_rate,
-            last_tx_from_src: Time(0),
-            last_tx_from_dst: Time(0),
 
             counter: DataCounter::default(),
         }
@@ -114,22 +108,6 @@ impl AttachedLink {
             ..*packet
         }) + self.propagation_delay
             + self.propagation_delay
-    }
-
-    pub fn advance_delivery_time(&mut self, src_addr: Address, packet: &Packet, now: Time) -> Time {
-        let tx_time = self.tx(packet);
-
-        let time = if src_addr == self.src_addr {
-            &mut self.last_tx_from_src
-        } else if src_addr == self.dst_addr {
-            &mut self.last_tx_from_dst
-        } else {
-            panic!("Not a valid node address");
-        };
-
-        *time = max(now, *time) + tx_time;
-
-        *time
     }
 
     pub fn show_stats(&self) {

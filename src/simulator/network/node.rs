@@ -41,6 +41,8 @@ pub struct AttachedNode {
     last_acked: u64,
     last_sent: u64,
     last_recv: u64,
+
+    last_tx_sched: Time,
 }
 
 impl Node {
@@ -62,6 +64,7 @@ impl Node {
             last_acked: 0,
             last_sent: self.tx_window, // A trick to not have to modify the node at start
             last_recv: 0,
+            last_tx_sched: Time(0),
         }
     }
 }
@@ -87,12 +90,12 @@ impl AttachedNode {
     }
 
     fn transmit(
-        &self,
+        &mut self,
         seqno: u64,
         dst_addr: Address,
         now: Time,
         payload_size: u16,
-        link: &mut AttachedLink,
+        link: &AttachedLink,
     ) -> Vec<Event> {
         let mut res = Vec::with_capacity(2);
 
@@ -104,7 +107,7 @@ impl AttachedNode {
             dst_addr,
         };
 
-        let delivery_time = link.advance_delivery_time(self.addr, &p, now);
+        let delivery_time = self.advance_delivery_time(link, &p, now);
 
         if payload_size > 0 {
             res.push(Event {
@@ -125,16 +128,16 @@ impl AttachedNode {
     }
 
     fn process_timeout(
-        &self,
+        &mut self,
         dst_addr: Address,
         seqno: u64,
         now: Time,
-        link: &mut AttachedLink,
+        link: &AttachedLink,
     ) -> Vec<Event> {
         self.transmit(seqno, dst_addr, now, self.payload_size, link)
     }
 
-    fn process_ack(&mut self, packet: &Packet, now: Time, link: &mut AttachedLink) -> Vec<Event> {
+    fn process_ack(&mut self, packet: &Packet, now: Time, link: &AttachedLink) -> Vec<Event> {
         info!("{} ACK received {}", now.as_secs(), packet);
 
         debug!("Current window: ({}, {}]", self.last_acked, self.last_sent);
@@ -152,7 +155,7 @@ impl AttachedNode {
         res
     }
 
-    fn process_data(&mut self, packet: &Packet, now: Time, link: &mut AttachedLink) -> Vec<Event> {
+    fn process_data(&mut self, packet: &Packet, now: Time, link: &AttachedLink) -> Vec<Event> {
         info!("{} DATA received {}", now.as_secs(), packet);
         if packet.seqno <= self.last_recv + 1 {
             // New data
@@ -169,13 +172,13 @@ impl AttachedNode {
         }
     }
 
-    pub fn process(&mut self, event: &Event, now: Time, net: &mut Network) -> Vec<Event> {
+    pub fn process(&mut self, event: &Event, now: Time, net: &Network) -> Vec<Event> {
         match event.kind {
             Payload(packet) => {
                 if packet.payload_size == 0 {
                     // An ack
                     if packet.seqno > self.last_acked && packet.seqno <= self.last_sent {
-                        self.process_ack(&packet, now, net.get_mut_link_by_addr(self.link_addr))
+                        self.process_ack(&packet, now, net.get_ref_link_by_addr(self.link_addr))
                     } else {
                         debug!(
                             "Ignoring incorrect ack {}, expecting from ({}, {}]",
@@ -184,7 +187,7 @@ impl AttachedNode {
                         vec![]
                     }
                 } else {
-                    self.process_data(&packet, now, net.get_mut_link_by_addr(self.link_addr))
+                    self.process_data(&packet, now, net.get_ref_link_by_addr(self.link_addr))
                 }
             }
             Timeout(seqno) => {
@@ -194,7 +197,7 @@ impl AttachedNode {
                         self.get_dst_address(net),
                         seqno,
                         now,
-                        net.get_mut_link_by_addr(self.link_addr),
+                        net.get_ref_link_by_addr(self.link_addr),
                     )
                 } else {
                     trace!(
@@ -211,5 +214,13 @@ impl AttachedNode {
 
     pub fn get_transmitted_packets(&self) -> u64 {
         self.last_acked
+    }
+
+    fn advance_delivery_time(&mut self, link: &AttachedLink, packet: &Packet, now: Time) -> Time {
+        let tx_time = link.tx(packet);
+
+        self.last_tx_sched = max(now, self.last_tx_sched) + tx_time;
+
+        self.last_tx_sched
     }
 }
