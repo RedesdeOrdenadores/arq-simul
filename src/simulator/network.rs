@@ -52,6 +52,11 @@ impl Network {
         }
     }
 
+    pub fn start(&mut self, node_addr: Address, now: Time) -> Vec<Event> {
+        let src_node = self.get_ref_node_by_addr(node_addr).clone();
+        src_node.start(self, now)
+    }
+
     fn add_element(&mut self, element: ElementClass) -> Address {
         let element = Element {
             addr: Address::create(self.elements.len()),

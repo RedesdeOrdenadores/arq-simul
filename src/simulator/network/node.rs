@@ -76,8 +76,14 @@ impl AttachedNode {
         }
     }
 
-    pub fn start(&self, net: &mut Network, dst_addr: Address, now: Time) -> Vec<Event> {
+    pub fn start(&self, net: &mut Network, now: Time) -> Vec<Event> {
         let link = net.get_mut_link_by_addr(self.link_addr);
+
+        let dst_addr = if link.src_addr == self.addr {
+            link.dst_addr
+        } else {
+            link.src_addr
+        };
 
         let mut res = Vec::new();
         for seqno in 1..=self.last_sent {

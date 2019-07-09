@@ -92,7 +92,7 @@ fn main() {
     };
 
     let mut network = Network::new();
-    let (src_addr, dst_addr, link_addr) = network.add_link_and_nodes(
+    let (src_addr, _dst_addr, link_addr) = network.add_link_and_nodes(
         Node::create(opt.header_length, opt.payload_length, opt.tx_window),
         Node::create(opt.header_length, 0, opt.tx_window),
         Link::create(opt.capacity, delay, opt.ber),
@@ -101,8 +101,7 @@ fn main() {
     let mut simulator = Simulator::new();
     let mut clock = Time(0);
 
-    let src_node = network.get_ref_node_by_addr(src_addr).clone();
-    simulator.add_events(&src_node.start(&mut network, dst_addr, clock));
+    simulator.add_events(&network.start(src_addr, clock));
 
     while clock < duration {
         match simulator.pop() {
