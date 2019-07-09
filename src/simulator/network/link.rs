@@ -35,7 +35,7 @@ pub struct Link {
     bit_error_rate: f64,
 }
 
-#[derive(Clone, Copy, Debug)]
+#[derive(Clone, Debug)]
 pub struct AttachedLink {
     pub src_addr: Address,
     pub dst_addr: Address,

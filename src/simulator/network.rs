@@ -68,13 +68,15 @@ impl Network {
     }
 
     fn add_link(&mut self, link: AttachedLink) -> Address {
+        let (src_link_addr, dst_link_addr) = (
+            self.get_ref_node_by_addr(link.src_addr).link_addr,
+            self.get_ref_node_by_addr(link.dst_addr).link_addr,
+        );
+
         let element_addr = self.add_element(ElementClass::Link(link));
 
-        let ref src = self.get_ref_node_by_addr(link.src_addr);
-        let ref dst = self.get_ref_node_by_addr(link.dst_addr);
-
-        assert_eq!(src.link_addr, element_addr);
-        assert_eq!(dst.link_addr, element_addr);
+        assert_eq!(src_link_addr, element_addr);
+        assert_eq!(dst_link_addr, element_addr);
 
         element_addr
     }
