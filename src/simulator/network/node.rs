@@ -29,9 +29,6 @@ pub struct Node {
     header_size: u16,
     payload_size: u16,
     tx_window: u64,
-    last_acked: u64,
-    last_sent: u64,
-    last_recv: u64,
 }
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
@@ -52,9 +49,6 @@ impl Node {
             header_size,
             payload_size,
             tx_window: u64::from(tx_window),
-            last_acked: 0,
-            last_sent: u64::from(tx_window), // A trick to not have to modify the node at start
-            last_recv: 0,
         }
     }
 
@@ -65,9 +59,9 @@ impl Node {
             header_size: self.header_size,
             payload_size: self.payload_size,
             tx_window: self.tx_window,
-            last_acked: self.last_acked,
-            last_sent: self.last_sent,
-            last_recv: self.last_recv,
+            last_acked: 0,
+            last_sent: u64::from(self.tx_window), // A trick to not have to modify the node at start
+            last_recv: 0,
         }
     }
 }
