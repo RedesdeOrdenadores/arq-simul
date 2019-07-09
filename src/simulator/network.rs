@@ -28,13 +28,13 @@ pub use node::{AttachedNode, Node};
 
 use std::vec::Vec;
 #[derive(Clone, Copy, Debug)]
-pub enum ElementClass {
+enum ElementClass {
     Node(AttachedNode),
     Link(AttachedLink),
 }
 
 #[derive(Clone, Copy, Debug)]
-pub struct Element {
+struct Element {
     pub addr: Address,
     pub class: ElementClass,
 }
