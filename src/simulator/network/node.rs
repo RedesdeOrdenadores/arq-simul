@@ -60,7 +60,7 @@ impl Node {
             payload_size: self.payload_size,
             tx_window: self.tx_window,
             last_acked: 0,
-            last_sent: u64::from(self.tx_window), // A trick to not have to modify the node at start
+            last_sent: self.tx_window, // A trick to not have to modify the node at start
             last_recv: 0,
         }
     }
