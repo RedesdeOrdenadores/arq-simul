@@ -76,20 +76,14 @@ impl AttachedNode {
         }
     }
 
-    pub fn start(&self, net: &mut Network, now: Time) -> Vec<Event> {
-        let link = net.get_mut_link_by_addr(self.link_addr);
-
-        let dst_addr = if link.src_addr == self.addr {
-            link.dst_addr
-        } else {
-            link.src_addr
-        };
-
-        let mut res = Vec::new();
-        for seqno in 1..=self.last_sent {
-            res.extend(self.transmit(seqno, dst_addr, now, self.payload_size, link))
-        }
-        res
+    pub fn start(&self, now: Time) -> Vec<Event> {
+        (1..=self.last_sent)
+            .map(|seqno| Event {
+                due_time: now + Time(seqno), // FIXME: Just a hack to make them timeout orderly
+                target: self.addr,
+                kind: Timeout(seqno),
+            })
+            .collect()
     }
 
     fn transmit(

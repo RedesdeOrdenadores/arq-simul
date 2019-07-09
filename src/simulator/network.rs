@@ -52,9 +52,9 @@ impl Network {
         }
     }
 
-    pub fn start(&mut self, node_addr: Address, now: Time) -> Vec<Event> {
+    pub fn start(&self, node_addr: Address, now: Time) -> Vec<Event> {
         let src_node = self.get_ref_node_by_addr(node_addr).clone();
-        src_node.start(self, now)
+        src_node.start(now)
     }
 
     fn add_element(&mut self, element: ElementClass) -> Address {
