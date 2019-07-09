@@ -1,6 +1,6 @@
 [package]
 name = "arq-simul"
-version = "0.2.9"
+version = "0.2.10"
 authors = ["Miguel Rodríguez Pérez <miguel@det.uvigo.gal>"]
 edition = "2018"
 
