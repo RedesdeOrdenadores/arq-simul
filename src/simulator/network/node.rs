@@ -31,7 +31,7 @@ pub struct Node {
     tx_window: u64,
 }
 
-#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+#[derive(Clone, Debug, PartialEq, Eq)]
 pub struct AttachedNode {
     addr: Address,
     header_size: u16,

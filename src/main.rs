@@ -101,7 +101,7 @@ fn main() {
     let mut simulator = Simulator::new();
     let mut clock = Time(0);
 
-    let src_node = *network.get_ref_node_by_addr(src_addr);
+    let src_node = network.get_ref_node_by_addr(src_addr).clone();
     simulator.add_events(&src_node.start(&mut network, dst_addr, clock));
 
     while clock < duration {

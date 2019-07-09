@@ -27,13 +27,14 @@ pub use link::{AttachedLink, Link};
 pub use node::{AttachedNode, Node};
 
 use std::vec::Vec;
-#[derive(Clone, Copy, Debug)]
+
+#[derive(Clone, Debug)]
 enum ElementClass {
     Node(AttachedNode),
     Link(AttachedLink),
 }
 
-#[derive(Clone, Copy, Debug)]
+#[derive(Clone, Debug)]
 struct Element {
     pub addr: Address,
     pub class: ElementClass,
@@ -56,9 +57,10 @@ impl Network {
             addr: Address::create(self.elements.len()),
             class: element,
         };
-        self.elements.push(element);
+        let addr = element.addr;
 
-        element.addr
+        self.elements.push(element);
+        addr
     }
 
     fn add_node(&mut self, node: AttachedNode) -> Address {
@@ -68,18 +70,11 @@ impl Network {
     fn add_link(&mut self, link: AttachedLink) -> Address {
         let element_addr = self.add_element(ElementClass::Link(link));
 
-        if let (ElementClass::Node(src), ElementClass::Node(dst)) = (
-            self.get_ref_by_addr(link.src_addr).class,
-            self.get_ref_by_addr(link.dst_addr).class,
-        ) {
-            assert_eq!(src.link_addr, element_addr);
-            assert_eq!(dst.link_addr, element_addr);
-        } else {
-            panic!(
-                "Could not found attached nodes to link at addr {}.",
-                element_addr
-            );
-        }
+        let ref src = self.get_ref_node_by_addr(link.src_addr);
+        let ref dst = self.get_ref_node_by_addr(link.dst_addr);
+
+        assert_eq!(src.link_addr, element_addr);
+        assert_eq!(dst.link_addr, element_addr);
 
         element_addr
     }
@@ -149,7 +144,7 @@ impl Network {
     pub fn process_event(&mut self, event: &Event, now: Time) -> Vec<Event> {
         let (evs, element) = {
             let e = self.get_ref_by_addr(event.target);
-            let (addr, class) = (e.addr, e.class);
+            let (addr, class) = (e.addr, e.class.clone());
             match class {
                 ElementClass::Node(mut n) => (
                     n.process(event, now, self),
@@ -158,11 +153,11 @@ impl Network {
                         class: ElementClass::Node(n),
                     },
                 ),
-                ElementClass::Link(mut n) => (
-                    n.process(event, now, self),
+                ElementClass::Link(mut l) => (
+                    l.process(event, now, self),
                     Element {
                         addr,
-                        class: ElementClass::Link(n),
+                        class: ElementClass::Link(l),
                     },
                 ),
             }
