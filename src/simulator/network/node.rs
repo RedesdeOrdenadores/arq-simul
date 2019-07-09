@@ -173,12 +173,14 @@ impl AttachedNode {
     }
 
     pub fn process(&mut self, event: &Event, now: Time, net: &Network) -> Vec<Event> {
+        let link = net.get_ref_link_by_addr(self.link_addr);
+
         match event.kind {
             Payload(packet) => {
                 if packet.payload_size == 0 {
                     // An ack
                     if packet.seqno > self.last_acked && packet.seqno <= self.last_sent {
-                        self.process_ack(&packet, now, net.get_ref_link_by_addr(self.link_addr))
+                        self.process_ack(&packet, now, link)
                     } else {
                         debug!(
                             "Ignoring incorrect ack {}, expecting from ({}, {}]",
@@ -187,18 +189,13 @@ impl AttachedNode {
                         vec![]
                     }
                 } else {
-                    self.process_data(&packet, now, net.get_ref_link_by_addr(self.link_addr))
+                    self.process_data(&packet, now, link)
                 }
             }
             Timeout(seqno) => {
                 if seqno > self.last_acked {
                     debug!("Processing timeout {}", seqno);
-                    self.process_timeout(
-                        self.get_dst_address(net),
-                        seqno,
-                        now,
-                        net.get_ref_link_by_addr(self.link_addr),
-                    )
+                    self.process_timeout(self.get_dst_address(net), seqno, now, link)
                 } else {
                     trace!(
                         "{} Ignoring timeout for {}, minimum is {}",

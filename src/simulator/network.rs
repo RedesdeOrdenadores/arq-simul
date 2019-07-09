@@ -149,18 +149,21 @@ impl Network {
     }
 
     pub fn process_event(&mut self, event: &Event, now: Time) -> Vec<Event> {
-        let (evs, element) = {
-            let e = self.get_ref_by_addr(event.target).clone();
+        let (addr, (evs, class)) = {
+            let e = self.get_mut_by_addr(event.target);
 
-            let (evs, class) = match e.class {
-                ElementClass::Node(mut n) => (n.process(event, now, self), ElementClass::Node(n)),
-                ElementClass::Link(mut l) => (l.process(event, now), ElementClass::Link(l)),
-            };
-
-            (evs, Element { class, ..e })
+            (
+                e.addr,
+                match e.class.clone() {
+                    ElementClass::Node(mut n) => {
+                        (n.process(event, now, self), ElementClass::Node(n))
+                    }
+                    ElementClass::Link(mut l) => (l.process(event, now), ElementClass::Link(l)),
+                },
+            )
         };
 
-        *self.get_mut_by_addr(event.target) = element;
+        *self.get_mut_by_addr(event.target) = Element { addr, class };
         evs
     }
 }
