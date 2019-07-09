@@ -154,7 +154,7 @@ impl Network {
 
             let (evs, class) = match e.class {
                 ElementClass::Node(mut n) => (n.process(event, now, self), ElementClass::Node(n)),
-                ElementClass::Link(mut l) => (l.process(event, now, self), ElementClass::Link(l)),
+                ElementClass::Link(mut l) => (l.process(event, now), ElementClass::Link(l)),
             };
 
             (evs, Element { class, ..e })

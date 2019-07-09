@@ -81,7 +81,7 @@ impl AttachedLink {
         rand::thread_rng().gen::<f64>() > prob_tx
     }
 
-    pub fn process(&mut self, event: &Event, now: Time, _net: &Network) -> Vec<Event> {
+    pub fn process(&mut self, event: &Event, now: Time) -> Vec<Event> {
         let mut res = Vec::with_capacity(1);
 
         if let Payload(packet) = event.kind {
