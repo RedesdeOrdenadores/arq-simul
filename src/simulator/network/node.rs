@@ -140,11 +140,13 @@ impl AttachedNode {
         debug!("Current window: ({}, {}]", self.last_acked, self.last_sent);
         self.last_acked = packet.seqno;
 
-        let mut res = Vec::new();
-        for seqno in self.last_sent + 1..=self.last_acked + self.tx_window {
-            res.extend(self.transmit(seqno, packet.src_addr, now, self.payload_size, link));
-        }
+        let res = (self.last_sent + 1..=self.last_acked + self.tx_window)
+            .map(|seqno| self.transmit(seqno, packet.src_addr, now, self.payload_size, link))
+            .flatten()
+            .collect();
+
         self.last_sent = self.last_acked + self.tx_window;
+
         debug!("Updated window: ({}, {}]", self.last_acked, self.last_sent);
 
         res
