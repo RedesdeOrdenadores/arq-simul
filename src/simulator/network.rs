@@ -131,6 +131,13 @@ impl Network {
         }
     }
 
+    pub fn get_mut_link_by_addr(&mut self, addr: Address) -> &mut AttachedLink {
+        match self.get_mut_by_addr(addr).class {
+            ElementClass::Link(ref mut link) => link,
+            _ => panic!("Could not find link at address {}", addr),
+        }
+    }
+
     fn get_mut_by_addr(&mut self, addr: Address) -> &mut Element {
         if let Some(element) = self.elements.get_mut(usize::from(addr)) {
             return element;

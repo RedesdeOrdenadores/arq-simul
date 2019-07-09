@@ -18,7 +18,7 @@
 use super::address::Address;
 use super::link::AttachedLink;
 use super::packet::Packet;
-use super::{ElementClass, Event, Network};
+use super::{Event, Network};
 use crate::simulator::{Payload, Timeout};
 use eee_hyst::Time;
 use log::{debug, info, trace};
@@ -74,7 +74,7 @@ impl Node {
 
 impl AttachedNode {
     fn get_dst_address(&self, net: &Network) -> Address {
-        let link = get_link_by_addr(net, self.link_addr);
+        let link = net.get_ref_link_by_addr(self.link_addr);
         if self.addr == link.src_addr {
             link.dst_addr
         } else {
@@ -83,7 +83,7 @@ impl AttachedNode {
     }
 
     pub fn start(&self, net: &mut Network, dst_addr: Address, now: Time) -> Vec<Event> {
-        let link = get_mut_link_by_addr(net, self.link_addr);
+        let link = net.get_mut_link_by_addr(self.link_addr);
 
         let mut res = Vec::new();
         for seqno in 1..=self.last_sent {
@@ -179,7 +179,7 @@ impl AttachedNode {
                 if packet.payload_size == 0 {
                     // An ack
                     if packet.seqno > self.last_acked && packet.seqno <= self.last_sent {
-                        self.process_ack(&packet, now, get_mut_link_by_addr(net, self.link_addr))
+                        self.process_ack(&packet, now, net.get_mut_link_by_addr(self.link_addr))
                     } else {
                         debug!(
                             "Ignoring incorrect ack {}, expecting from ({}, {}]",
@@ -188,7 +188,7 @@ impl AttachedNode {
                         vec![]
                     }
                 } else {
-                    self.process_data(&packet, now, get_mut_link_by_addr(net, self.link_addr))
+                    self.process_data(&packet, now, net.get_mut_link_by_addr(self.link_addr))
                 }
             }
             Timeout(seqno) => {
@@ -198,7 +198,7 @@ impl AttachedNode {
                         self.get_dst_address(net),
                         seqno,
                         now,
-                        get_mut_link_by_addr(net, self.link_addr),
+                        net.get_mut_link_by_addr(self.link_addr),
                     )
                 } else {
                     trace!(
@@ -216,22 +216,4 @@ impl AttachedNode {
     pub fn get_transmitted_packets(&self) -> u64 {
         self.last_acked
     }
-}
-
-fn get_link_by_addr(net: &Network, link_addr: Address) -> &AttachedLink {
-    let element = net.get_ref_by_addr(link_addr);
-    if let ElementClass::Link(ref link) = element.class {
-        return link;
-    }
-
-    panic!("Could not find a link at address: {}", link_addr);
-}
-
-fn get_mut_link_by_addr(net: &mut Network, link_addr: Address) -> &mut AttachedLink {
-    let element = net.get_mut_by_addr(link_addr);
-    if let ElementClass::Link(ref mut link) = element.class {
-        return link;
-    }
-
-    panic!("Could not find a link at address: {}", link_addr);
 }
