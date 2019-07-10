@@ -75,20 +75,20 @@ impl Link {
 }
 
 impl AttachedLink {
-    fn drop_packet(&self, packet: &Packet) -> bool {
+    fn drop_packet<R: Rng>(&self, packet: &Packet, rng: &mut R) -> bool {
         let bit_size = 8 * i32::from(packet.header_size + packet.payload_size);
         let prob_tx = (1.0 - self.bit_error_rate).powi(bit_size);
 
-        rand::thread_rng().gen::<f64>() > prob_tx
+        rng.gen::<f64>() > prob_tx
     }
 
-    pub fn process(&mut self, event: &Event, now: Time) -> Vec<Event> {
+    pub fn process<R: Rng>(&mut self, event: &Event, now: Time, rng: &mut R) -> Vec<Event> {
         let mut res = Vec::with_capacity(1);
 
         if let Payload(packet) = event.kind {
             self.counter = self.counter.received_packet(&packet);
 
-            if self.drop_packet(&packet) {
+            if self.drop_packet(&packet, rng) {
                 trace!("Packet got lost, sorry");
             } else {
                 self.counter = self.counter.delivered_packet(&packet);

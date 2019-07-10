@@ -25,6 +25,8 @@ use eee_hyst::Time;
 pub use link::{AttachedLink, Link, LinkAddress};
 pub use terminal::{AttachedTerminal, Terminal, TerminalAddress};
 
+use rand::Rng;
+
 use std::vec::Vec;
 
 #[derive(Clone, Debug, Default)]
@@ -120,7 +122,7 @@ impl Network {
         panic!("Could not find link at address {}", addr);
     }
 
-    pub fn process_event(&mut self, event: &Event, now: Time) -> Vec<Event> {
+    pub fn process_event<R: Rng>(&mut self, event: &Event, now: Time, rng: &mut R) -> Vec<Event> {
         match event.target {
             Target::Terminal(terminal_addr) => {
                 let terminal = self.get_ref_terminal_by_addr(terminal_addr);
@@ -129,7 +131,9 @@ impl Network {
                 self.get_mut_terminal_by_addr(terminal_addr)
                     .process(event, now, &link)
             }
-            Target::Link(link_addr) => self.get_mut_link_by_addr(link_addr).process(event, now),
+            Target::Link(link_addr) => self
+                .get_mut_link_by_addr(link_addr)
+                .process(event, now, rng),
         }
     }
 }

@@ -20,6 +20,8 @@ mod network;
 use eee_hyst::Time;
 use network::packet::Packet;
 use network::{LinkAddress, TerminalAddress};
+use rand::SeedableRng;
+use rand_pcg::Pcg64Mcg;
 use std::cmp::Ordering;
 use std::collections::binary_heap::BinaryHeap;
 
@@ -87,17 +89,17 @@ impl PartialEq for Event {
     }
 }
 
-#[derive(Debug, Default)]
+#[derive(Debug)]
 pub struct Simulator {
     event_queue: BinaryHeap<Event>,
-    seed: u64,
+    pub rng: Pcg64Mcg,
 }
 
 impl Simulator {
     pub fn from_seed(seed: u64) -> Simulator {
         Simulator {
             event_queue: BinaryHeap::new(),
-            seed,
+            rng: Pcg64Mcg::seed_from_u64(seed),
         }
     }
 
@@ -111,5 +113,14 @@ impl Simulator {
 
     pub fn pop(&mut self) -> Option<Event> {
         self.event_queue.pop()
+    }
+}
+
+impl Default for Simulator {
+    fn default() -> Self {
+        Simulator {
+            event_queue: BinaryHeap::default(),
+            rng: Pcg64Mcg::from_entropy(),
+        }
     }
 }
