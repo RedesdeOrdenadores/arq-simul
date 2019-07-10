@@ -91,7 +91,7 @@ fn main() {
         return;
     };
 
-    let mut network = Network::new();
+    let mut network = Network::default();
     let (src_addr, _dst_addr, link_addr) = network.add_link_and_terminals(
         Terminal::create(opt.header_length, opt.payload_length, opt.tx_window),
         Terminal::create(opt.header_length, 0, opt.tx_window),

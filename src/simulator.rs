@@ -18,8 +18,8 @@
 mod network;
 
 use eee_hyst::Time;
-use network::address::Address;
 use network::packet::Packet;
+use network::{LinkAddress, TerminalAddress};
 use std::cmp::Ordering;
 use std::collections::binary_heap::BinaryHeap;
 
@@ -53,10 +53,16 @@ impl PartialOrd for EventKind {
     }
 }
 
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum Target {
+    Link(LinkAddress),
+    Terminal(TerminalAddress),
+}
+
 #[derive(Debug, Clone, Copy, Eq)]
 pub struct Event {
     pub due_time: Time,
-    pub target: Address,
+    pub target: Target,
     pub kind: EventKind,
 }
 

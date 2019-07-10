@@ -20,12 +20,15 @@ mod datacounter;
 use super::address::Address;
 use super::packet::Packet;
 use super::Event;
-use crate::simulator::Payload;
+use super::TerminalAddress;
+use crate::simulator::{Payload, Target};
 use datacounter::DataCounter;
 use log::trace;
 use rand::Rng;
 
 use eee_hyst::Time;
+
+pub type LinkAddress = Address;
 
 #[derive(Clone, Copy, Debug)]
 pub struct Link {
@@ -36,8 +39,8 @@ pub struct Link {
 
 #[derive(Clone, Debug)]
 pub struct AttachedLink {
-    pub src_addr: Address,
-    pub dst_addr: Address,
+    pub src_addr: TerminalAddress,
+    pub dst_addr: TerminalAddress,
     capacity: f64,
     propagation_delay: Time,
     bit_error_rate: f64,
@@ -54,7 +57,11 @@ impl Link {
         }
     }
 
-    pub fn attach_terminals(&self, src_addr: Address, dst_addr: Address) -> AttachedLink {
+    pub fn attach_terminals(
+        &self,
+        src_addr: TerminalAddress,
+        dst_addr: TerminalAddress,
+    ) -> AttachedLink {
         AttachedLink {
             src_addr,
             dst_addr,
@@ -87,7 +94,7 @@ impl AttachedLink {
                 self.counter = self.counter.delivered_packet(&packet);
                 res.push(Event {
                     due_time: now + self.propagation_delay,
-                    target: packet.dst_addr,
+                    target: Target::Terminal(packet.dst_addr),
                     kind: Payload(packet),
                 })
             };

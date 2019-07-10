@@ -18,11 +18,13 @@
 use super::address::Address;
 use super::link::AttachedLink;
 use super::packet::Packet;
-use super::{Event, Network};
-use crate::simulator::{Payload, Timeout};
+use super::{Event, LinkAddress};
+use crate::simulator::{Payload, Target, Timeout};
 use eee_hyst::Time;
 use log::{debug, info, trace};
 use std::cmp::max;
+
+pub type TerminalAddress = Address;
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq, Default)]
 pub struct Terminal {
@@ -33,11 +35,11 @@ pub struct Terminal {
 
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub struct AttachedTerminal {
-    addr: Address,
+    pub addr: TerminalAddress,
     header_size: u16,
     payload_size: u16,
     tx_window: u64,
-    pub link_addr: Address,
+    pub link_addr: LinkAddress,
     last_acked: u64,
     last_sent: u64,
     last_recv: u64,
@@ -54,7 +56,11 @@ impl Terminal {
         }
     }
 
-    pub fn attach_to_link(&self, self_addr: Address, link_addr: Address) -> AttachedTerminal {
+    pub fn attach_to_link(
+        &self,
+        self_addr: TerminalAddress,
+        link_addr: LinkAddress,
+    ) -> AttachedTerminal {
         AttachedTerminal {
             addr: self_addr,
             link_addr,
@@ -70,8 +76,7 @@ impl Terminal {
 }
 
 impl AttachedTerminal {
-    fn get_dst_address(&self, net: &Network) -> Address {
-        let link = net.get_ref_link_by_addr(self.link_addr);
+    fn get_dst_address(&self, link: &AttachedLink) -> TerminalAddress {
         if self.addr == link.src_addr {
             link.dst_addr
         } else {
@@ -83,7 +88,7 @@ impl AttachedTerminal {
         (1..=self.last_sent)
             .map(|seqno| Event {
                 due_time: now + Time(seqno), // FIXME: Just a hack to make them timeout orderly
-                target: self.addr,
+                target: Target::Terminal(self.addr),
                 kind: Timeout(seqno),
             })
             .collect()
@@ -92,7 +97,7 @@ impl AttachedTerminal {
     fn transmit(
         &mut self,
         seqno: u64,
-        dst_addr: Address,
+        dst_addr: TerminalAddress,
         now: Time,
         payload_size: u16,
         link: &AttachedLink,
@@ -112,7 +117,7 @@ impl AttachedTerminal {
         if payload_size > 0 {
             res.push(Event {
                 due_time: delivery_time + link.calc_timeout(&p),
-                target: self.addr,
+                target: Target::Terminal(self.addr),
                 kind: Timeout(seqno),
             });
         }
@@ -120,7 +125,7 @@ impl AttachedTerminal {
         info!("{} sending {}", now.as_secs(), p);
         res.push(Event {
             due_time: delivery_time,
-            target: self.link_addr,
+            target: Target::Link(self.link_addr),
             kind: Payload(p),
         });
 
@@ -129,7 +134,7 @@ impl AttachedTerminal {
 
     fn process_timeout(
         &mut self,
-        dst_addr: Address,
+        dst_addr: TerminalAddress,
         seqno: u64,
         now: Time,
         link: &AttachedLink,
@@ -172,9 +177,7 @@ impl AttachedTerminal {
         }
     }
 
-    pub fn process(&mut self, event: &Event, now: Time, net: &Network) -> Vec<Event> {
-        let link = net.get_ref_link_by_addr(self.link_addr);
-
+    pub fn process(&mut self, event: &Event, now: Time, link: &AttachedLink) -> Vec<Event> {
         match event.kind {
             Payload(packet) => {
                 if packet.payload_size == 0 {
@@ -195,7 +198,7 @@ impl AttachedTerminal {
             Timeout(seqno) => {
                 if seqno > self.last_acked {
                     debug!("Processing timeout {}", seqno);
-                    self.process_timeout(self.get_dst_address(net), seqno, now, link)
+                    self.process_timeout(self.get_dst_address(link), seqno, now, link)
                 } else {
                     trace!(
                         "{} Ignoring timeout for {}, minimum is {}",

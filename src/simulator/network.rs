@@ -20,65 +20,42 @@ mod link;
 pub mod packet;
 mod terminal;
 
-use super::Event;
-use address::Address;
+use super::{Event, Target};
 use eee_hyst::Time;
-pub use link::{AttachedLink, Link};
-pub use terminal::{AttachedTerminal, Terminal};
+pub use link::{AttachedLink, Link, LinkAddress};
+pub use terminal::{AttachedTerminal, Terminal, TerminalAddress};
 
 use std::vec::Vec;
 
-#[derive(Clone, Debug)]
-enum ElementClass {
-    Terminal(AttachedTerminal),
-    Link(AttachedLink),
-}
-
-#[derive(Clone, Debug)]
-struct Element {
-    pub addr: Address,
-    pub class: ElementClass,
-}
-
 #[derive(Clone, Debug, Default)]
 pub struct Network {
-    elements: Vec<Element>,
+    nodes: Vec<AttachedTerminal>,
+    edges: Vec<AttachedLink>,
 }
 
 impl Network {
-    pub fn new() -> Network {
-        Network {
-            elements: Vec::new(),
-        }
-    }
-
-    pub fn start(&self, terminal_addr: Address, now: Time) -> Vec<Event> {
+    pub fn start(&self, terminal_addr: TerminalAddress, now: Time) -> Vec<Event> {
         let src_terminal = self.get_ref_terminal_by_addr(terminal_addr).clone();
         src_terminal.start(now)
     }
 
-    fn add_element(&mut self, element: ElementClass) -> Address {
-        let element = Element {
-            addr: Address::create(self.elements.len()),
-            class: element,
-        };
-        let addr = element.addr;
+    fn add_terminal(&mut self, terminal: AttachedTerminal) -> TerminalAddress {
+        assert_eq!(self.nodes.len(), usize::from(terminal.addr));
 
-        self.elements.push(element);
-        addr
+        let address = terminal.addr;
+        self.nodes.push(terminal);
+
+        address
     }
 
-    fn add_terminal(&mut self, terminal: AttachedTerminal) -> Address {
-        self.add_element(ElementClass::Terminal(terminal))
-    }
-
-    fn add_link(&mut self, link: AttachedLink) -> Address {
+    fn add_link(&mut self, link: AttachedLink) -> LinkAddress {
         let (src_link_addr, dst_link_addr) = (
             self.get_ref_terminal_by_addr(link.src_addr).link_addr,
             self.get_ref_terminal_by_addr(link.dst_addr).link_addr,
         );
 
-        let element_addr = self.add_element(ElementClass::Link(link));
+        let element_addr = LinkAddress::create(self.edges.len());
+        self.edges.push(link);
 
         assert_eq!(src_link_addr, element_addr);
         assert_eq!(dst_link_addr, element_addr);
@@ -91,10 +68,10 @@ impl Network {
         orig: Terminal,
         dst: Terminal,
         link: Link,
-    ) -> (Address, Address, Address) {
-        let addr_orig = Address::create(self.elements.len());
-        let addr_dst = Address::create(usize::from(addr_orig) + 1);
-        let link_addr = Address::create(usize::from(addr_dst) + 1);
+    ) -> (TerminalAddress, TerminalAddress, LinkAddress) {
+        let addr_orig = TerminalAddress::create(self.nodes.len());
+        let addr_dst = TerminalAddress::create(usize::from(addr_orig) + 1);
+        let link_addr = LinkAddress::create(self.edges.len());
 
         let (attached_orig, attached_dst) = (
             orig.attach_to_link(addr_orig, link_addr),
@@ -111,59 +88,48 @@ impl Network {
         (addr_orig, addr_dst, link_addr)
     }
 
-    fn get_ref_by_addr(&self, addr: Address) -> &Element {
-        if let Some(element) = self.elements.get(usize::from(addr)) {
-            return element;
-        };
-
-        panic!("No element at address {}", addr);
-    }
-
-    pub fn get_ref_terminal_by_addr(&self, addr: Address) -> &AttachedTerminal {
-        match self.get_ref_by_addr(addr).class {
-            ElementClass::Terminal(ref terminal) => terminal,
-            _ => panic!("Could not find terminal at address {}", addr),
+    pub fn get_ref_terminal_by_addr(&self, addr: TerminalAddress) -> &AttachedTerminal {
+        if let Some(terminal) = self.nodes.get(usize::from(addr)) {
+            return terminal;
         }
+
+        panic!("No node at address {}", addr);
     }
 
-    pub fn get_ref_link_by_addr(&self, addr: Address) -> &AttachedLink {
-        match self.get_ref_by_addr(addr).class {
-            ElementClass::Link(ref link) => link,
-            _ => panic!("Could not find link at address {}", addr),
+    pub fn get_mut_terminal_by_addr(&mut self, addr: TerminalAddress) -> &mut AttachedTerminal {
+        if let Some(terminal) = self.nodes.get_mut(usize::from(addr)) {
+            return terminal;
         }
+
+        panic!("No node at address {}", addr);
     }
 
-    pub fn get_mut_link_by_addr(&mut self, addr: Address) -> &mut AttachedLink {
-        match self.get_mut_by_addr(addr).class {
-            ElementClass::Link(ref mut link) => link,
-            _ => panic!("Could not find link at address {}", addr),
+    pub fn get_ref_link_by_addr(&self, addr: LinkAddress) -> &AttachedLink {
+        if let Some(link) = self.edges.get(usize::from(addr)) {
+            return link;
         }
+
+        panic!("Could not find link at address {}", addr);
     }
 
-    fn get_mut_by_addr(&mut self, addr: Address) -> &mut Element {
-        if let Some(element) = self.elements.get_mut(usize::from(addr)) {
-            return element;
-        };
+    pub fn get_mut_link_by_addr(&mut self, addr: LinkAddress) -> &mut AttachedLink {
+        if let Some(link) = self.edges.get_mut(usize::from(addr)) {
+            return link;
+        }
 
-        panic!("No terminal at address {}", addr);
+        panic!("Could not find link at address {}", addr);
     }
 
     pub fn process_event(&mut self, event: &Event, now: Time) -> Vec<Event> {
-        let (addr, (evs, class)) = {
-            let e = self.get_mut_by_addr(event.target);
+        match event.target {
+            Target::Terminal(terminal_addr) => {
+                let terminal = self.get_ref_terminal_by_addr(terminal_addr);
+                let link = self.get_ref_link_by_addr(terminal.link_addr).clone();
 
-            (
-                e.addr,
-                match e.class.clone() {
-                    ElementClass::Terminal(mut n) => {
-                        (n.process(event, now, self), ElementClass::Terminal(n))
-                    }
-                    ElementClass::Link(mut l) => (l.process(event, now), ElementClass::Link(l)),
-                },
-            )
-        };
-
-        *self.get_mut_by_addr(event.target) = Element { addr, class };
-        evs
+                self.get_mut_terminal_by_addr(terminal_addr)
+                    .process(event, now, &link)
+            }
+            Target::Link(link_addr) => self.get_mut_link_by_addr(link_addr).process(event, now),
+        }
     }
 }

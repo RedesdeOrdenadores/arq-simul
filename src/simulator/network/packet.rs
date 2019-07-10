@@ -17,15 +17,15 @@
 
 use std::fmt;
 
-use super::address::Address;
+use super::TerminalAddress;
 
 #[derive(Debug, Copy, Clone, PartialEq, Eq, Ord, PartialOrd, Hash)]
 pub struct Packet {
     pub seqno: u64,
     pub header_size: u16,
     pub payload_size: u16,
-    pub src_addr: Address,
-    pub dst_addr: Address,
+    pub src_addr: TerminalAddress,
+    pub dst_addr: TerminalAddress,
 }
 
 impl fmt::Display for Packet {
