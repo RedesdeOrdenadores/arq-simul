@@ -10,7 +10,7 @@ dependencies = [
 
 [[package]]
 name = "arq-simul"
-version = "0.3.0"
+version = "0.3.1"
 dependencies = [
  "eee-hyst 0.5.0 (git+https://github.com/migrax/HystEEE.git)",
  "log 0.4.6 (registry+https://github.com/rust-lang/crates.io-index)",
