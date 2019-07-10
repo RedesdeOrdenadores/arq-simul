@@ -53,6 +53,10 @@ struct Opt {
     #[structopt(short = "l", long = "duration", default_value = "0.1")]
     duration: f64,
 
+    /// Simulation seed
+    #[structopt(short = "s", long = "seed", default_value = "0")]
+    seed: u64,
+
     /// Verbose level
     #[structopt(short = "v", long = "verbose", parse(from_occurrences))]
     verbose: usize,
@@ -98,7 +102,7 @@ fn main() {
         Link::create(opt.capacity, delay, opt.ber),
     );
 
-    let mut simulator = Simulator::new();
+    let mut simulator = Simulator::from_seed(opt.seed);
     let mut clock = Time(0);
 
     simulator.add_events(&network.start(src_addr, clock));

@@ -27,6 +27,7 @@ introductory Computer Networks subjects.
         --header <header_length>      Header length in bytes [default: 40]
         --payload <payload_length>    Payload length in bytes [default: 1460]
     -w, --wsize <tx_window>           Window size (in packets) [default: 1]
+	-s, --seed <random seed>          Simulation seed [default: 0]
 
 ## Legal
 

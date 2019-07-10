@@ -90,12 +90,14 @@ impl PartialEq for Event {
 #[derive(Debug, Default)]
 pub struct Simulator {
     event_queue: BinaryHeap<Event>,
+    seed: u64,
 }
 
 impl Simulator {
-    pub fn new() -> Simulator {
+    pub fn from_seed(seed: u64) -> Simulator {
         Simulator {
             event_queue: BinaryHeap::new(),
+            seed,
         }
     }
 

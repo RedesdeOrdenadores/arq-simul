@@ -9,6 +9,7 @@ structopt = "0.2"
 stderrlog = "0.4"
 log = "0.4"
 rand =  "0.7"
+rand_pcg = "0.2"
 
 [dependencies.eee-hyst]
 git = "https://github.com/migrax/HystEEE.git"
