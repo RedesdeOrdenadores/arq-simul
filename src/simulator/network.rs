@@ -122,7 +122,7 @@ impl Network {
         panic!("Could not find link at address {}", addr);
     }
 
-    pub fn process_event<R: Rng>(&mut self, event: &Event, now: Time, rng: &mut R) -> Vec<Event> {
+    pub fn process_event<R: Rng>(&mut self, event: Event, now: Time, rng: &mut R) -> Vec<Event> {
         match event.target {
             Target::Terminal(terminal_addr) => {
                 let terminal = self.get_ref_terminal_by_addr(terminal_addr);

@@ -112,11 +112,11 @@ impl AttachedTerminal {
             dst_addr,
         };
 
-        let delivery_time = self.advance_delivery_time(link, &p, now);
+        let delivery_time = self.advance_delivery_time(link, p, now);
 
         if payload_size > 0 {
             res.push(Event {
-                due_time: delivery_time + link.calc_timeout(&p),
+                due_time: delivery_time + link.calc_timeout(p),
                 target: Target::Terminal(self.addr),
                 kind: Timeout(seqno),
             });
@@ -215,7 +215,7 @@ impl AttachedTerminal {
         self.last_acked
     }
 
-    fn advance_delivery_time(&mut self, link: &AttachedLink, packet: &Packet, now: Time) -> Time {
+    fn advance_delivery_time(&mut self, link: &AttachedLink, packet: Packet, now: Time) -> Time {
         let tx_time = link.tx(packet);
 
         self.last_tx_sched = max(now, self.last_tx_sched) + tx_time;

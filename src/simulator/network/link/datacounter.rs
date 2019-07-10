@@ -26,7 +26,7 @@ pub struct DataCounter {
 }
 
 impl DataCounter {
-    pub fn received_packet(&self, packet: &Packet) -> DataCounter {
+    pub fn received_packet(&self, packet: Packet) -> DataCounter {
         DataCounter {
             raw_received: self.raw_received + raw(packet),
             good_received: self.good_received + good(packet),
@@ -34,7 +34,7 @@ impl DataCounter {
         }
     }
 
-    pub fn delivered_packet(&self, packet: &Packet) -> DataCounter {
+    pub fn delivered_packet(&self, packet: Packet) -> DataCounter {
         DataCounter {
             raw_delivered: self.raw_delivered + raw(packet),
             good_delivered: self.good_delivered + good(packet),
@@ -43,10 +43,10 @@ impl DataCounter {
     }
 }
 
-fn raw(packet: &Packet) -> u64 {
+fn raw(packet: Packet) -> u64 {
     u64::from(packet.header_size + packet.payload_size)
 }
 
-fn good(packet: &Packet) -> u64 {
+fn good(packet: Packet) -> u64 {
     u64::from(packet.payload_size)
 }

@@ -75,44 +75,43 @@ impl Link {
 }
 
 impl AttachedLink {
-    fn drop_packet<R: Rng>(&self, packet: &Packet, rng: &mut R) -> bool {
+    fn drop_packet<R: Rng>(&self, packet: Packet, rng: &mut R) -> bool {
         let bit_size = 8 * i32::from(packet.header_size + packet.payload_size);
         let prob_tx = (1.0 - self.bit_error_rate).powi(bit_size);
 
         rng.gen::<f64>() > prob_tx
     }
 
-    pub fn process<R: Rng>(&mut self, event: &Event, now: Time, rng: &mut R) -> Vec<Event> {
-        let mut res = Vec::with_capacity(1);
-
+    pub fn process<R: Rng>(&mut self, event: Event, now: Time, rng: &mut R) -> Vec<Event> {
         if let Payload(packet) = event.kind {
-            self.counter = self.counter.received_packet(&packet);
+            self.counter = self.counter.received_packet(packet);
 
-            if self.drop_packet(&packet, rng) {
+            if self.drop_packet(packet, rng) {
                 trace!("Packet got lost, sorry");
+                Vec::new()
             } else {
-                self.counter = self.counter.delivered_packet(&packet);
-                res.push(Event {
-                    due_time: now + self.propagation_delay,
-                    target: Target::Terminal(packet.dst_addr),
-                    kind: Payload(packet),
-                })
-            };
+                self.counter = self.counter.delivered_packet(packet);
+                vec![
+                    (Event {
+                        due_time: now + self.propagation_delay,
+                        target: Target::Terminal(packet.dst_addr),
+                        kind: Payload(packet),
+                    }),
+                ]
+            }
         } else {
-            panic!("Link event with no attached packet to transmit");
+            panic!("Link event with no attached packet to transmit")
         }
-
-        res
     }
 
-    pub fn tx(&self, packet: &Packet) -> Time {
+    pub fn tx(&self, packet: Packet) -> Time {
         Time::from_secs(f64::from(8 * (packet.header_size + packet.payload_size)) / self.capacity)
     }
 
-    pub fn calc_timeout(&self, packet: &Packet) -> Time {
-        self.tx(&Packet {
+    pub fn calc_timeout(&self, packet: Packet) -> Time {
+        self.tx(Packet {
             payload_size: 0,
-            ..*packet
+            ..packet
         }) + self.propagation_delay
             + self.propagation_delay
     }

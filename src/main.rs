@@ -114,7 +114,7 @@ fn main() {
         match simulator.pop() {
             Some(event) => {
                 clock = event.due_time;
-                let evs = network.process_event(&event, clock, &mut simulator.rng);
+                let evs = network.process_event(event, clock, &mut simulator.rng);
                 simulator.add_events(&evs);
             }
             None => {
