@@ -54,7 +54,7 @@ impl Link {
         }
     }
 
-    pub fn attach_nodes(&self, src_addr: Address, dst_addr: Address) -> AttachedLink {
+    pub fn attach_terminals(&self, src_addr: Address, dst_addr: Address) -> AttachedLink {
         AttachedLink {
             src_addr,
             dst_addr,

@@ -17,20 +17,20 @@
 
 pub mod address;
 mod link;
-mod node;
 pub mod packet;
+mod terminal;
 
 use super::Event;
 use address::Address;
 use eee_hyst::Time;
 pub use link::{AttachedLink, Link};
-pub use node::{AttachedNode, Node};
+pub use terminal::{AttachedTerminal, Terminal};
 
 use std::vec::Vec;
 
 #[derive(Clone, Debug)]
 enum ElementClass {
-    Node(AttachedNode),
+    Terminal(AttachedTerminal),
     Link(AttachedLink),
 }
 
@@ -52,9 +52,9 @@ impl Network {
         }
     }
 
-    pub fn start(&self, node_addr: Address, now: Time) -> Vec<Event> {
-        let src_node = self.get_ref_node_by_addr(node_addr).clone();
-        src_node.start(now)
+    pub fn start(&self, terminal_addr: Address, now: Time) -> Vec<Event> {
+        let src_terminal = self.get_ref_terminal_by_addr(terminal_addr).clone();
+        src_terminal.start(now)
     }
 
     fn add_element(&mut self, element: ElementClass) -> Address {
@@ -68,14 +68,14 @@ impl Network {
         addr
     }
 
-    fn add_node(&mut self, node: AttachedNode) -> Address {
-        self.add_element(ElementClass::Node(node))
+    fn add_terminal(&mut self, terminal: AttachedTerminal) -> Address {
+        self.add_element(ElementClass::Terminal(terminal))
     }
 
     fn add_link(&mut self, link: AttachedLink) -> Address {
         let (src_link_addr, dst_link_addr) = (
-            self.get_ref_node_by_addr(link.src_addr).link_addr,
-            self.get_ref_node_by_addr(link.dst_addr).link_addr,
+            self.get_ref_terminal_by_addr(link.src_addr).link_addr,
+            self.get_ref_terminal_by_addr(link.dst_addr).link_addr,
         );
 
         let element_addr = self.add_element(ElementClass::Link(link));
@@ -86,10 +86,10 @@ impl Network {
         element_addr
     }
 
-    pub fn add_link_and_nodes(
+    pub fn add_link_and_terminals(
         &mut self,
-        orig: Node,
-        dst: Node,
+        orig: Terminal,
+        dst: Terminal,
         link: Link,
     ) -> (Address, Address, Address) {
         let addr_orig = Address::create(self.elements.len());
@@ -101,10 +101,10 @@ impl Network {
             dst.attach_to_link(addr_dst, link_addr),
         );
 
-        assert_eq!(self.add_node(attached_orig), addr_orig);
-        assert_eq!(self.add_node(attached_dst), addr_dst);
+        assert_eq!(self.add_terminal(attached_orig), addr_orig);
+        assert_eq!(self.add_terminal(attached_dst), addr_dst);
         assert_eq!(
-            self.add_link(link.attach_nodes(addr_orig, addr_dst)),
+            self.add_link(link.attach_terminals(addr_orig, addr_dst)),
             link_addr
         );
 
@@ -119,10 +119,10 @@ impl Network {
         panic!("No element at address {}", addr);
     }
 
-    pub fn get_ref_node_by_addr(&self, addr: Address) -> &AttachedNode {
+    pub fn get_ref_terminal_by_addr(&self, addr: Address) -> &AttachedTerminal {
         match self.get_ref_by_addr(addr).class {
-            ElementClass::Node(ref node) => node,
-            _ => panic!("Could not find node at address {}", addr),
+            ElementClass::Terminal(ref terminal) => terminal,
+            _ => panic!("Could not find terminal at address {}", addr),
         }
     }
 
@@ -145,7 +145,7 @@ impl Network {
             return element;
         };
 
-        panic!("No node at address {}", addr);
+        panic!("No terminal at address {}", addr);
     }
 
     pub fn process_event(&mut self, event: &Event, now: Time) -> Vec<Event> {
@@ -155,8 +155,8 @@ impl Network {
             (
                 e.addr,
                 match e.class.clone() {
-                    ElementClass::Node(mut n) => {
-                        (n.process(event, now, self), ElementClass::Node(n))
+                    ElementClass::Terminal(mut n) => {
+                        (n.process(event, now, self), ElementClass::Terminal(n))
                     }
                     ElementClass::Link(mut l) => (l.process(event, now), ElementClass::Link(l)),
                 },

@@ -25,14 +25,14 @@ use log::{debug, info, trace};
 use std::cmp::max;
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq, Default)]
-pub struct Node {
+pub struct Terminal {
     header_size: u16,
     payload_size: u16,
     tx_window: u64,
 }
 
 #[derive(Clone, Debug, PartialEq, Eq)]
-pub struct AttachedNode {
+pub struct AttachedTerminal {
     addr: Address,
     header_size: u16,
     payload_size: u16,
@@ -45,31 +45,31 @@ pub struct AttachedNode {
     last_tx_sched: Time,
 }
 
-impl Node {
-    pub fn create(header_size: u16, payload_size: u16, tx_window: u16) -> Node {
-        Node {
+impl Terminal {
+    pub fn create(header_size: u16, payload_size: u16, tx_window: u16) -> Terminal {
+        Terminal {
             header_size,
             payload_size,
             tx_window: u64::from(tx_window),
         }
     }
 
-    pub fn attach_to_link(&self, self_addr: Address, link_addr: Address) -> AttachedNode {
-        AttachedNode {
+    pub fn attach_to_link(&self, self_addr: Address, link_addr: Address) -> AttachedTerminal {
+        AttachedTerminal {
             addr: self_addr,
             link_addr,
             header_size: self.header_size,
             payload_size: self.payload_size,
             tx_window: self.tx_window,
             last_acked: 0,
-            last_sent: self.tx_window, // A trick to not have to modify the node at start
+            last_sent: self.tx_window, // A trick to not have to modify the terminal at start
             last_recv: 0,
             last_tx_sched: Time(0),
         }
     }
 }
 
-impl AttachedNode {
+impl AttachedTerminal {
     fn get_dst_address(&self, net: &Network) -> Address {
         let link = net.get_ref_link_by_addr(self.link_addr);
         if self.addr == link.src_addr {

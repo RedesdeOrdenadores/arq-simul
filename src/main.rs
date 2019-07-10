@@ -21,7 +21,7 @@ extern crate log;
 use eee_hyst::Time;
 use structopt::StructOpt;
 
-use arq_simul::simulator::{Link, Network, Node, Simulator};
+use arq_simul::simulator::{Link, Network, Simulator, Terminal};
 
 #[derive(StructOpt, Debug)]
 struct Opt {
@@ -92,9 +92,9 @@ fn main() {
     };
 
     let mut network = Network::new();
-    let (src_addr, _dst_addr, link_addr) = network.add_link_and_nodes(
-        Node::create(opt.header_length, opt.payload_length, opt.tx_window),
-        Node::create(opt.header_length, 0, opt.tx_window),
+    let (src_addr, _dst_addr, link_addr) = network.add_link_and_terminals(
+        Terminal::create(opt.header_length, opt.payload_length, opt.tx_window),
+        Terminal::create(opt.header_length, 0, opt.tx_window),
         Link::create(opt.capacity, delay, opt.ber),
     );
 
@@ -121,7 +121,7 @@ fn main() {
 
     link.show_stats();
     let acked_packets = network
-        .get_ref_node_by_addr(src_addr)
+        .get_ref_terminal_by_addr(src_addr)
         .get_transmitted_packets();
     println!(
         "Acknowledged {} bytes ({} of data)",

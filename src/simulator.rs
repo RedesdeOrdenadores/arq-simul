@@ -24,7 +24,7 @@ use std::cmp::Ordering;
 use std::collections::binary_heap::BinaryHeap;
 
 pub use self::EventKind::{Payload, Timeout};
-pub use network::{Link, Network, Node};
+pub use network::{Link, Network, Terminal};
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum EventKind {
