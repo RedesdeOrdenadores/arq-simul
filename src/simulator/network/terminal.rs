@@ -139,25 +139,45 @@ impl AttachedTerminal {
         now: Time,
         link: &AttachedLink,
     ) -> Vec<Event> {
-        self.transmit(seqno, dst_addr, now, self.payload_size, link)
+        if seqno > self.last_acked {
+            debug!("Processing timeout {}", seqno);
+            self.transmit(seqno, dst_addr, now, self.payload_size, link)
+        } else {
+            trace!(
+                "{} Ignoring timeout for {}, minimum is {}",
+                now.as_secs(),
+                seqno,
+                self.last_acked + 1
+            );
+            Vec::new()
+        }
     }
 
     fn process_ack(&mut self, packet: &Packet, now: Time, link: &AttachedLink) -> Vec<Event> {
         info!("{} ACK received {}", now.as_secs(), packet);
 
-        debug!("Current window: ({}, {}]", self.last_acked, self.last_sent);
-        self.last_acked = packet.seqno;
+        if packet.seqno > self.last_acked && packet.seqno <= self.last_sent {
+            debug!("Current window: ({}, {}]", self.last_acked, self.last_sent);
+            self.last_acked = packet.seqno;
 
-        let res = (self.last_sent + 1..=self.last_acked + self.tx_window)
-            .map(|seqno| self.transmit(seqno, packet.src_addr, now, self.payload_size, link))
-            .flatten()
-            .collect();
+            let res = (self.last_sent + 1..=self.last_acked + self.tx_window)
+                .map(|seqno| self.transmit(seqno, packet.src_addr, now, self.payload_size, link))
+                .flatten()
+                .collect();
 
-        self.last_sent = self.last_acked + self.tx_window;
+            self.last_sent = self.last_acked + self.tx_window;
 
-        debug!("Updated window: ({}, {}]", self.last_acked, self.last_sent);
+            debug!("Updated window: ({}, {}]", self.last_acked, self.last_sent);
 
-        res
+            res
+        } else {
+            debug!(
+                "Ignoring incorrect ack {}, expecting from ({}, {}]",
+                packet.seqno, self.last_acked, self.last_sent
+            );
+
+            Vec::new()
+        }
     }
 
     fn process_data(&mut self, packet: &Packet, now: Time, link: &AttachedLink) -> Vec<Event> {
@@ -177,38 +197,17 @@ impl AttachedTerminal {
         }
     }
 
-    pub fn process(&mut self, event: &Event, now: Time, link: &AttachedLink) -> Vec<Event> {
+    pub fn process(&mut self, event: Event, now: Time, link: &AttachedLink) -> Vec<Event> {
         match event.kind {
-            Payload(packet) => {
+            Payload(ref packet) => {
                 if packet.payload_size == 0 {
-                    // An ack
-                    if packet.seqno > self.last_acked && packet.seqno <= self.last_sent {
-                        self.process_ack(&packet, now, link)
-                    } else {
-                        debug!(
-                            "Ignoring incorrect ack {}, expecting from ({}, {}]",
-                            packet.seqno, self.last_acked, self.last_sent
-                        );
-                        vec![]
-                    }
+                    self.process_ack(packet, now, link)
                 } else {
-                    self.process_data(&packet, now, link)
+                    self.process_data(packet, now, link)
                 }
             }
-            Timeout(seqno) => {
-                if seqno > self.last_acked {
-                    debug!("Processing timeout {}", seqno);
-                    self.process_timeout(self.get_dst_address(link), seqno, now, link)
-                } else {
-                    trace!(
-                        "{} Ignoring timeout for {}, minimum is {}",
-                        now.as_secs(),
-                        seqno,
-                        self.last_acked + 1
-                    );
-                    vec![]
-                }
-            }
+
+            Timeout(seqno) => self.process_timeout(self.get_dst_address(link), seqno, now, link),
         }
     }
 
