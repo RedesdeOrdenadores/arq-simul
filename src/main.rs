@@ -24,6 +24,7 @@ use structopt::StructOpt;
 use arq_simul::simulator::{Link, Network, Simulator, Terminal};
 
 #[derive(StructOpt, Debug)]
+#[structopt(author, about)]
 struct Opt {
     /// Link capacity in bits/s
     #[structopt(short = "C", long = "capacity", default_value = "10e9")]

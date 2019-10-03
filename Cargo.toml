@@ -1,11 +1,11 @@
 [package]
 name = "arq-simul"
-version = "0.3.1"
+version = "0.3.2"
 authors = ["Miguel Rodríguez Pérez <miguel@det.uvigo.gal>"]
 edition = "2018"
 
 [dependencies]
-structopt = "0.2"
+structopt = "0.3"
 stderrlog = "0.4"
 log = "0.4"
 rand =  "0.7"
