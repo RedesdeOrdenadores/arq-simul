@@ -28,16 +28,16 @@ pub type TerminalAddress = Address;
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq, Default)]
 pub struct Terminal {
-    header_size: u16,
-    payload_size: u16,
+    header_size: u32,
+    payload_size: u32,
     tx_window: u64,
 }
 
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub struct AttachedTerminal {
     pub addr: TerminalAddress,
-    header_size: u16,
-    payload_size: u16,
+    header_size: u32,
+    payload_size: u32,
     tx_window: u64,
     pub link_addr: LinkAddress,
     last_acked: u64,
@@ -48,7 +48,7 @@ pub struct AttachedTerminal {
 }
 
 impl Terminal {
-    pub fn create(header_size: u16, payload_size: u16, tx_window: u16) -> Terminal {
+    pub fn create(header_size: u32, payload_size: u32, tx_window: u16) -> Terminal {
         Terminal {
             header_size,
             payload_size,
@@ -99,7 +99,7 @@ impl AttachedTerminal {
         seqno: u64,
         dst_addr: TerminalAddress,
         now: Time,
-        payload_size: u16,
+        payload_size: u32,
         link: &AttachedLink,
     ) -> Vec<Event> {
         let mut res = Vec::with_capacity(2);

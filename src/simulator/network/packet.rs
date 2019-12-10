@@ -22,8 +22,8 @@ use super::TerminalAddress;
 #[derive(Debug, Copy, Clone, PartialEq, Eq, Ord, PartialOrd, Hash)]
 pub struct Packet {
     pub seqno: u64,
-    pub header_size: u16,
-    pub payload_size: u16,
+    pub header_size: u32,
+    pub payload_size: u32,
     pub src_addr: TerminalAddress,
     pub dst_addr: TerminalAddress,
 }

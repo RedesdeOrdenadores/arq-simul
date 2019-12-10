@@ -32,11 +32,11 @@ struct Opt {
 
     /// Header length in bytes
     #[structopt(long = "header", default_value = "40")]
-    header_length: u16,
+    header_length: u32,
 
     /// Payload length in bytes
     #[structopt(long = "payload", default_value = "1460")]
-    payload_length: u16,
+    payload_length: u32,
 
     /// Window size (in packets)
     #[structopt(short = "w", long = "wsize", default_value = "1")]

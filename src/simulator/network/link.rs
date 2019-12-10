@@ -25,6 +25,7 @@ use crate::simulator::{Payload, Target};
 use datacounter::DataCounter;
 use log::trace;
 use rand::Rng;
+use std::convert::TryFrom;
 
 use eee_hyst::Time;
 
@@ -76,7 +77,7 @@ impl Link {
 
 impl AttachedLink {
     fn drop_packet<R: Rng>(&self, packet: Packet, rng: &mut R) -> bool {
-        let bit_size = 8 * i32::from(packet.header_size + packet.payload_size);
+        let bit_size = i32::try_from(8 * (packet.header_size + packet.payload_size)).unwrap();
         let prob_tx = (1.0 - self.bit_error_rate).powi(bit_size);
 
         rng.gen::<f64>() > prob_tx
