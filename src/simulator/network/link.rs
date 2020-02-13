@@ -85,7 +85,7 @@ impl AttachedLink {
 
     pub fn process<R: Rng>(&mut self, event: Event, now: Time, rng: &mut R) -> Vec<Event> {
         if let Payload(packet) = event.kind {
-            self.counter = self.counter.received_packet(packet);
+            self.counter = self.counter.transmitted_packet(packet);
 
             if self.drop_packet(packet, rng) {
                 trace!("Packet got lost, sorry");
@@ -119,8 +119,8 @@ impl AttachedLink {
 
     pub fn show_stats(&self) {
         println!(
-            "Received {} bytes ({} of data)",
-            self.counter.raw_received, self.counter.good_received
+            "Transmitted {} bytes ({} of data)",
+            self.counter.raw_transmitted, self.counter.good_transmitted
         );
         println!(
             "Delivered {} bytes ({} of data)",

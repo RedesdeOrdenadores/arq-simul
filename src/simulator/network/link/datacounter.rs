@@ -19,17 +19,17 @@ use crate::simulator::network::packet::Packet;
 
 #[derive(Clone, Copy, Debug, Default, PartialEq, Eq, Hash)]
 pub struct DataCounter {
-    pub raw_received: u64,
-    pub good_received: u64,
+    pub raw_transmitted: u64,
+    pub good_transmitted: u64,
     pub raw_delivered: u64,
     pub good_delivered: u64,
 }
 
 impl DataCounter {
-    pub fn received_packet(&self, packet: Packet) -> DataCounter {
+    pub fn transmitted_packet(&self, packet: Packet) -> DataCounter {
         DataCounter {
-            raw_received: self.raw_received + raw(packet),
-            good_received: self.good_received + good(packet),
+            raw_transmitted: self.raw_transmitted + raw(packet),
+            good_transmitted: self.good_transmitted + good(packet),
             ..*self
         }
     }
