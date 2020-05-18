@@ -14,3 +14,7 @@ rand_pcg = "0.2"
 
 [dependencies.eee-hyst]
 git = "https://github.com/migrax/HystEEE.git"
+
+[dependencies.clap]
+version = "3.0.0-beta.1"
+features = ["wrap_help"]

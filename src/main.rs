@@ -19,52 +19,56 @@
 extern crate log;
 
 use eee_hyst::Time;
-use structopt::StructOpt;
+use clap::Clap;
 
 use arq_simul::simulator::{Link, Network, Simulator, Terminal};
 
-#[derive(StructOpt, Debug)]
-#[structopt(author, about)]
+#[derive(Clap, Debug)]
+/// Miguel Rodríguez Pérez <miguel@det.uvigo.gal>
+/// A simple discrete
+/// time event simulator that shows the behavior of the main ARQ
+/// algorithms. It is built with didactic objectives to be used in
+/// introductory Computer Networks subject
 struct Opt {
     /// Link capacity in bits/s
-    #[structopt(short = "C", long = "capacity", default_value = "10e9")]
+    #[clap(short = 'C', long = "capacity", default_value = "10e9")]
     capacity: f64,
 
     /// Header length in bytes
-    #[structopt(long = "header", default_value = "40")]
+    #[clap(long = "header", default_value = "40")]
     header_length: u32,
 
     /// Payload length in bytes
-    #[structopt(long = "payload", default_value = "1460")]
+    #[clap(long = "payload", default_value = "1460")]
     payload_length: u32,
 
     /// Window size (in packets)
-    #[structopt(short = "w", long = "wsize", default_value = "1")]
+    #[clap(short = 'w', long = "wsize", default_value = "1")]
     tx_window: u16,
 
     /// Bit error rate
-    #[structopt(short = "b", long = "ber", default_value = "0.0")]
+    #[clap(short = 'b', long = "ber", default_value = "0.0")]
     ber: f64,
 
     /// Propagation delay, in seconds
-    #[structopt(short = "p", long = "prop_delay", default_value = "1e-3")]
+    #[clap(short = 'p', long = "prop_delay", default_value = "1e-3")]
     delay: f64,
 
     /// Simulation duration, in seconds
-    #[structopt(short = "l", long = "duration", default_value = "0.1")]
+    #[clap(short = 'l', long = "duration", default_value = "0.1")]
     duration: f64,
 
     /// Simulation seed
-    #[structopt(short = "s", long = "seed")]
+    #[clap(short = 's', long = "seed")]
     seed: Option<u64>,
 
     /// Verbose level
-    #[structopt(short = "v", long = "verbose", parse(from_occurrences))]
+    #[clap(short = 'v', long = "verbose", parse(from_occurrences))]
     verbose: usize,
 }
 
 fn main() {
-    let opt = Opt::from_args();
+    let opt = Opt::parse();
 
     stderrlog::new()
         .module(module_path!())
