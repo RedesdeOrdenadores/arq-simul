@@ -1,6 +1,6 @@
 [package]
 name = "arq-simul"
-version = "0.4.3"
+version = "0.4.4"
 authors = ["Miguel Rodríguez Pérez <miguel@det.uvigo.gal>"]
 edition = "2018"
 description = "A simple discrete time event simulator that shows the behavior of the main ARQ algorithms. It is built with didactic objectives to be used in introductory Computer Networks subject."
@@ -15,5 +15,5 @@ rand_pcg = "0.2"
 git = "https://github.com/migrax/HystEEE.git"
 
 [dependencies.clap]
-version = "3.0.0-beta.1"
+version = "3.0.0-beta.2"
 features = ["wrap_help"]
