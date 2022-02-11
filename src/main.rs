@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2019–2021 Miguel Rodríguez Pérez <miguel@det.uvigo.gal>
+ * Copyright (C) 2019–2022 Miguel Rodríguez Pérez <miguel@det.uvigo.gal>
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -18,17 +18,14 @@
 #[macro_use]
 extern crate log;
 
+use clap::Parser;
 use eee_hyst::Time;
-use clap::Clap;
 
 use arq_simul::simulator::{Link, Network, Simulator, Terminal};
 
-#[derive(Clap, Debug)]
-/// Miguel Rodríguez Pérez <miguel@det.uvigo.gal>
-/// A simple discrete
-/// time event simulator that shows the behavior of the main ARQ
-/// algorithms. It is built with didactic objectives to be used in
-/// introductory Computer Networks subject
+/// A simple discrete time event simulator that shows the behavior of the main ARQ algorithms. It is built with didactic objectives to be used in introductory Computer Networks subject.
+#[derive(Parser, Debug)]
+#[clap(author, version, about, long_about = None)]
 struct Opt {
     /// Link capacity in bits/s
     #[clap(short = 'C', long = "capacity", default_value = "10e9")]
