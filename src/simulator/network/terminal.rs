@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2019 Miguel Rodríguez Pérez <miguel@det.uvigo.gal>
+ * Copyright (C) 2019–2022 Miguel Rodríguez Pérez <miguel@det.uvigo.gal>
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -161,8 +161,9 @@ impl AttachedTerminal {
             self.last_acked = packet.seqno;
 
             let res = (self.last_sent + 1..=self.last_acked + self.tx_window)
-                .map(|seqno| self.transmit(seqno, packet.src_addr, now, self.payload_size, link))
-                .flatten()
+                .flat_map(|seqno| {
+                    self.transmit(seqno, packet.src_addr, now, self.payload_size, link)
+                })
                 .collect();
 
             self.last_sent = self.last_acked + self.tx_window;
