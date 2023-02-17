@@ -15,13 +15,11 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#[macro_use]
-extern crate log;
-
 use clap::Parser;
 use eee_hyst::Time;
 
 use arq_simul::simulator::{Link, Network, Simulator, Terminal};
+use log::error;
 
 /// A simple discrete time event simulator that shows the behavior of the main
 /// ARQ algorithms. It is built with didactic objectives to be used in
