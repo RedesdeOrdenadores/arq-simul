@@ -23,10 +23,12 @@ use eee_hyst::Time;
 
 use arq_simul::simulator::{Link, Network, Simulator, Terminal};
 
-/// A simple discrete time event simulator that shows the behavior of the main ARQ algorithms. It is built with didactic objectives to be used in introductory Computer Networks subject.
+/// A simple discrete time event simulator that shows the behavior of the main
+/// ARQ algorithms. It is built with didactic objectives to be used in
+/// introductory Computer Networks subject.
 #[derive(Parser, Debug)]
 #[clap(author, version, about, long_about = None)]
-struct Opt {
+struct Args {
     /// Link capacity in bits/s
     #[clap(short = 'C', long = "capacity", default_value = "10e9")]
     capacity: f64,
@@ -60,38 +62,38 @@ struct Opt {
     seed: Option<u64>,
 
     /// Verbose level
-    #[clap(short = 'v', long = "verbose", parse(from_occurrences))]
-    verbose: usize,
+    #[clap(short = 'v', long = "verbose", action = clap::ArgAction::Count)]
+    verbose: u8,
 }
 
 fn main() {
-    let opt = Opt::parse();
+    let args = Args::parse();
 
     stderrlog::new()
         .module(module_path!())
-        .verbosity(opt.verbose)
+        .verbosity(usize::from(args.verbose))
         .init()
         .unwrap();
 
-    if opt.capacity <= 0.0 {
+    if args.capacity <= 0.0 {
         error!("Capacity has to be strictly positive.");
         return;
     }
 
-    if opt.ber < 0.0 || opt.ber > 1.0 {
+    if args.ber < 0.0 || args.ber > 1.0 {
         error!("BER has to be between 0 and 1");
         return;
     }
 
-    let delay = if opt.delay >= 0.0 {
-        Time::from_secs(opt.delay)
+    let delay = if args.delay >= 0.0 {
+        Time::from_secs(args.delay)
     } else {
         error!("Propagation delay has to be positive.");
         return;
     };
 
-    let duration = if opt.duration > 0.0 {
-        Time::from_secs(opt.duration)
+    let duration = if args.duration > 0.0 {
+        Time::from_secs(args.duration)
     } else {
         error!("Simulation duration has to be strictly positive.");
         return;
@@ -99,12 +101,12 @@ fn main() {
 
     let mut network = Network::default();
     let (src_addr, _dst_addr, link_addr) = network.add_link_and_terminals(
-        Terminal::create(opt.header_length, opt.payload_length, opt.tx_window),
-        Terminal::create(opt.header_length, 0, opt.tx_window),
-        Link::create(opt.capacity, delay, opt.ber),
+        Terminal::create(args.header_length, args.payload_length, args.tx_window),
+        Terminal::create(args.header_length, 0, args.tx_window),
+        Link::create(args.capacity, delay, args.ber),
     );
 
-    let mut simulator = match opt.seed {
+    let mut simulator = match args.seed {
         Some(seed) => Simulator::from_seed(seed),
         None => Simulator::default(),
     };
@@ -134,14 +136,14 @@ fn main() {
         .get_transmitted_packets();
     println!(
         "Acknowledged {} bytes ({} of data)",
-        acked_packets * u64::from(opt.header_length + opt.payload_length),
-        acked_packets * u64::from(opt.payload_length)
+        acked_packets * u64::from(args.header_length + args.payload_length),
+        acked_packets * u64::from(args.payload_length)
     );
     println!(
         "Efficiency: {}% ({}% considering headers)",
-        100.0 * 8.0 * (acked_packets * u64::from(opt.header_length + opt.payload_length)) as f64
-            / (opt.capacity * duration.as_secs()),
-        100.0 * 8.0 * (acked_packets * u64::from(opt.payload_length)) as f64
-            / (opt.capacity * duration.as_secs())
+        100.0 * 8.0 * (acked_packets * u64::from(args.header_length + args.payload_length)) as f64
+            / (args.capacity * duration.as_secs()),
+        100.0 * 8.0 * (acked_packets * u64::from(args.payload_length)) as f64
+            / (args.capacity * duration.as_secs())
     );
 }
