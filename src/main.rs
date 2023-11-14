@@ -74,6 +74,8 @@ fn main() {
 
     env_logger::builder()
         .default_format()
+        .format_module_path(false)
+        .format_target(false)
         .filter_level(filter_level)
         .init();
 
