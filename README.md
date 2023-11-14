@@ -1,8 +1,7 @@
 ARQ-Simul
 =====
 
-[![Build
-Status](https://travis-ci.org/RedesdeOrdenadores/arq-simul.svg?branch=master)](https://travis-ci.org/RedesdeOrdenadores/arq-simul)
+![Build Status](https://github.com/RedesdeOrdenadores/arq-simul/actions/workflows/rust.yml/badge.svg)
 [![arq-simul](https://snapcraft.io/arq-simul/badge.svg)](https://snapcraft.io/arq-simul)
 
 ## Overview
