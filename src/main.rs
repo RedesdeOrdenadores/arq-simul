@@ -67,11 +67,15 @@ struct Args {
 fn main() {
     let args = Args::parse();
 
-    stderrlog::new()
-        .module(module_path!())
-        .verbosity(usize::from(args.verbose))
-        .init()
-        .unwrap();
+    let filter_level = match log::LevelFilter::iter().nth(args.verbose.into()) {
+        Some(level) => level,
+        None => log::LevelFilter::max(),
+    };
+
+    env_logger::builder()
+        .default_format()
+        .filter_level(filter_level)
+        .init();
 
     if args.capacity <= 0.0 {
         error!("Capacity has to be strictly positive.");

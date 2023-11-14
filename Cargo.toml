@@ -6,7 +6,7 @@ edition = "2021"
 description = "A simple discrete time event simulator that shows the behavior of the main ARQ algorithms. It is built with didactic objectives to be used in introductory Computer Networks subject."
 
 [dependencies]
-stderrlog = "0.5.4"
+env_logger = "0.10.1"
 log = "0.4.17"
 rand = "0.8.5"
 rand_pcg = "0.3.1"
