@@ -15,5 +15,5 @@ rand_pcg = "0.3.1"
 git = "https://github.com/migrax/HystEEE.git"
 
 [dependencies.clap]
-version = "4.4.8"
+version = "4.3"
 features = ["derive", "wrap_help"]

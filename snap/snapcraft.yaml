@@ -1,5 +1,5 @@
 name: arq-simul
-version: 0.4.7
+version: 0.5.0
 summary: A didactic simulator for different ARQ algorithms
 
 description: |
@@ -8,13 +8,20 @@ description: |
   be used in introductory Computer Networks subjects.
 
 confinement: strict
-base: core20
+base: core22
 license: GPL-3.0
 grade: stable
 
 parts:
+  rust-deps:
+    plugin: nil
+    build-packages:
+      - curl
+    override-pull: |
+      curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y --profile minimal
   arq-simul:
     plugin: rust
+    after: [rust-deps]
     source: .
 
 apps:
