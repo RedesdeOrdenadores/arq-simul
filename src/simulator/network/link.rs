@@ -17,14 +17,14 @@
 
 mod datacounter;
 
-use super::address::Address;
-use super::packet::Packet;
 use super::Event;
 use super::TerminalAddress;
+use super::address::Address;
+use super::packet::Packet;
 use crate::simulator::{Payload, Target};
 use datacounter::DataCounter;
 use log::trace;
-use rand::Rng;
+use rand::{Rng, RngExt};
 use std::convert::TryFrom;
 
 use eee_hyst::Time;
@@ -80,7 +80,7 @@ impl AttachedLink {
         let bit_size = i32::try_from(8 * (packet.header_size + packet.payload_size)).unwrap();
         let prob_tx = (1.0 - self.bit_error_rate).powi(bit_size);
 
-        rng.gen::<f64>() > prob_tx
+        rng.random::<f64>() > prob_tx
     }
 
     pub fn process<R: Rng>(&mut self, event: Event, now: Time, rng: &mut R) -> Vec<Event> {

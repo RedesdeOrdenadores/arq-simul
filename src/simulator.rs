@@ -120,7 +120,7 @@ impl Default for Simulator {
     fn default() -> Self {
         Simulator {
             event_queue: BinaryHeap::default(),
-            rng: Pcg64Mcg::from_entropy(),
+            rng: rand::make_rng(),
         }
     }
 }
